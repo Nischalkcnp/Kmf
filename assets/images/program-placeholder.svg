@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#1e3a5f"/>
+      <stop offset="1" stop-color="#52b788"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#g)"/>
+  <g fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" transform="translate(220 150)">
+    <rect x="0" y="80" width="360" height="180" rx="18"/>
+    <path d="M70 60v-32a12 12 0 0 1 12-12h196a12 12 0 0 1 12 12V60"/>
+    <path d="M60 120h120M60 160h80M60 200h80M210 120h80M210 160h80M210 200h80"/>
+  </g>
+  <text x="50%" y="86%" text-anchor="middle" fill="#ffffff" font-size="28" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    KMF Program
+  </text>
+</svg>

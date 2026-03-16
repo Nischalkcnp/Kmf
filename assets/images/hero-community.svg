@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="540" viewBox="0 0 900 540">
+  <defs>
+    <linearGradient id="heroBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e3a5f"/>
+      <stop offset="1" stop-color="#52b788"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="540" fill="url(#heroBg)"/>
+  <g transform="translate(120 120)">
+    <rect x="0" y="60" width="420" height="260" rx="28" fill="#0f172a" opacity="0.35"/>
+    <circle cx="80" cy="120" r="32" fill="#22c55e"/>
+    <circle cx="200" cy="180" r="32" fill="#f97316"/>
+    <circle cx="320" cy="140" r="32" fill="#38bdf8"/>
+    <path d="M80 120L200 180L320 140" fill="none" stroke="#e5e7eb" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="10" y="40" fill="#e5e7eb" font-size="20" font-weight="600" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+      Education " Community " Health
+    </text>
+  </g>
+  <text x="50%" y="88%" text-anchor="middle" fill="#e5e7eb" font-size="28" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    Kanchhi Maya Tamang Foundation
+  </text>
+</svg>

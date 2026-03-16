@@ -1,0 +1,8 @@
+-- Add realistic team members to KMF
+DELETE FROM team;
+
+INSERT INTO team (name, role, bio, image_url, type, sort_order) VALUES
+('Dr. Ram Bahadur Tamang', 'Chairperson', 'Dr. Tamang brings over 30 years of experience in rural development and community advocacy. A native of the region, he has dedicated his life to improving access to education and preserving the cultural heritage of the Tamang community. Under his leadership, KMF has grown into a cornerstone of local development.', 'assets/images/team-chairperson.png', 'board', 1),
+('Saraswati Thapa', 'Executive Director', 'Saraswati is a passionate social entrepreneur with 15 years of experience in managing non-profit organizations. She specializes in women empowerment and sustainable healthcare initiatives. She holds a Master’s degree in Social Work from Tribhuvan University and has pioneered several award-winning community health programs.', 'assets/images/team-director.png', 'staff', 1),
+('Anita Gurung', 'Program Manager', 'Anita manages the education and scholarship initiatives at KMF. With a background in teaching and educational administration, she ensures that every child in our target communities has the resources and support they need to succeed in school. She is a firm believer in the power of inclusive education.', '', 'staff', 2),
+('Bikash Lama', 'Health Officer', 'Bikash oversees our community health camps and wellness awareness programs. He is a certified healthcare professional who transitioned into the NGO sector to focus on preventive medicine and rural health infrastructure. His hands-on approach has greatly improved the health outcomes for hundreds of families.', '', 'staff', 3);
