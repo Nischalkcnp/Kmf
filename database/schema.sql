@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS strategic_areas (
   excerpt TEXT,
   content LONGTEXT,
   icon VARCHAR(50) DEFAULT NULL,
+  image_url VARCHAR(255),
   sort_order INT DEFAULT 0,
   is_active TINYINT(1) DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

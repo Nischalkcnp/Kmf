@@ -1,6 +1,7 @@
 /* KMF - Custom styles (Tailwind extended) */
 html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Ensure logo and images are responsive */
@@ -13,29 +14,81 @@ img {
 body {
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Mobile nav transition */
-#mobile-nav a {
-    transition: background 0.2s;
+#mobile-nav {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Card hover for strategic areas and programs */
+/* Glassmorphism utilities */
+.glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+    background: rgba(30, 58, 95, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Card hover for premium feel */
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px -10px rgba(30, 58, 95, 0.15);
 }
 
 /* Form focus ring in brand color */
 input:focus, textarea:focus, select:focus {
     outline: none;
     border-color: #1e3a5f;
-    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.2);
+    box-shadow: 0 0 0 4px rgba(30, 58, 95, 0.15);
 }
 
-/* Prose for CMS content */
-.prose-custom h2 { font-size: 1.5rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; }
-.prose-custom h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
-.prose-custom p { margin-bottom: 1rem; }
-.prose-custom ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
-.prose-custom a { color: #1e3a5f; text-decoration: underline; }
+/* Custom Typography & Prose */
+.prose-custom {
+    line-height: 1.8;
+}
+.prose-custom h2 { font-size: 1.75rem; font-weight: 800; color: #1e3a5f; margin-top: 2rem; margin-bottom: 1rem; }
+.prose-custom h3 { font-size: 1.4rem; font-weight: 800; color: #1e3a5f; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+.prose-custom p { margin-bottom: 1.25rem; }
+.prose-custom ul { list-style: none; padding-left: 0; margin-bottom: 1.5rem; }
+.prose-custom ul li { position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem; }
+.prose-custom ul li::before { content: '→'; position: absolute; left: 0; color: #f47b20; font-weight: bold; }
+.prose-custom a { color: #f47b20; font-weight: 700; text-decoration: none; border-bottom: 2px solid transparent; transition: all 0.2s; }
+
+.prose-custom a:hover { border-bottom-color: #f47b20; }
+
+/* Infinite Marquee for Partners */
+@keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.marquee-container {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: 100%;
+}
+
+.marquee-content {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    animation: marquee 30s linear infinite;
+    width: max-content;
+}
+
+.marquee-content:hover {
+    animation-play-state: paused;
+}
