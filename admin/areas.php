@@ -1,6 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/config/config.php';
-requireLogin();
+requirePermission('manage_areas');
 $adminTitle = 'Strategic Areas';
 
 $pdo = getDb();
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
     $excerpt = trim($_POST['excerpt'] ?? '');
     $content = $_POST['content'] ?? '';
     $icon = trim($_POST['icon'] ?? '');
-    $image_url = trim($_POST['image_url'] ?? '');
+    $image_url = handleImageUpload('image_file', 'areas', $_POST['current_image_url'] ?? '');
     $sort = (int)($_POST['sort_order'] ?? 0);
     $active = isset($_POST['is_active']) ? 1 : 0;
     if ($id) {
@@ -38,9 +38,10 @@ require_once __DIR__ . '/includes/header.php';
 <?php if (isset($_GET['updated'])): ?><p class="text-green-600 mb-4">Saved.</p><?php endif; ?>
 
 <?php if ($edit): ?>
-<form method="post" class="bg-white rounded-lg shadow p-6 mb-6 max-w-3xl">
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 mb-6 max-w-3xl">
     <?php echo csrfField(); ?>
     <input type="hidden" name="id" value="<?php echo $edit['id']; ?>">
+    <input type="hidden" name="current_image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>">
     <div class="space-y-4">
         <div><label class="block text-sm font-medium mb-1">Title</label><input type="text" name="title" value="<?php echo escape($edit['title']); ?>" class="w-full px-4 py-2 border rounded-lg" required></div>
         <div><label class="block text-sm font-medium mb-1">Slug</label><input type="text" name="slug" value="<?php echo escape($edit['slug']); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
@@ -51,12 +52,12 @@ require_once __DIR__ . '/includes/header.php';
             <div><label class="block text-sm font-medium mb-1">Sort</label><input type="number" name="sort_order" value="<?php echo (int)$edit['sort_order']; ?>" class="w-full px-4 py-2 border rounded-lg"></div>
         </div>
         <div>
-            <label class="block text-sm font-medium mb-1">Image URL</label>
-            <input type="text" name="image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg">
+            <label class="block text-sm font-medium mb-1">Image (Upload file)</label>
             <?php if (!empty($edit['image_url'])): ?>
                 <div class="mt-2 text-sm text-gray-500">Current Preview:</div>
                 <img src="<?php echo BASE_URL . $edit['image_url']; ?>" class="mt-1 h-32 w-auto rounded border" alt="Preview">
             <?php endif; ?>
+            <input type="file" name="image_file" class="w-full text-sm mt-2">
         </div>
         <div><label><input type="checkbox" name="is_active" value="1" <?php echo $edit['is_active'] ? 'checked' : ''; ?>> Active</label></div>
     </div>

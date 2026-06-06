@@ -1,24 +1,35 @@
 document.addEventListener('DOMContentLoaded', function () {
     const toggle = document.getElementById('nav-toggle');
-    const mobileNav = document.getElementById('mobile-nav');
-    const navIcon = document.getElementById('nav-icon');
+    const closeBtn = document.getElementById('nav-close');
+    const menu = document.getElementById('mobile-menu');
 
-    if (toggle && mobileNav && navIcon) {
+    if (toggle && menu) {
         toggle.addEventListener('click', function () {
-            const spans = navIcon.querySelectorAll('span');
-            mobileNav.classList.toggle('hidden');
-            
-            if (!mobileNav.classList.contains('hidden')) {
-                // Open state
-                spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-                spans[1].style.opacity = '0';
-                spans[2].style.transform = 'rotate(-45deg) translate(7px, -7px)';
-            } else {
-                // Closed state
-                spans[0].style.transform = 'none';
-                spans[1].style.opacity = '1';
-                spans[2].style.transform = 'none';
-            }
+            menu.classList.remove('translate-x-full');
+            menu.classList.add('translate-x-0');
+            document.body.style.overflow = 'hidden';
         });
     }
+
+    if (closeBtn && menu) {
+        closeBtn.addEventListener('click', function () {
+            menu.classList.remove('translate-x-0');
+            menu.classList.add('translate-x-full');
+            document.body.style.overflow = '';
+        });
+    }
+
+    // Menu Click Animation
+    document.querySelectorAll('.nav-link-animate').forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href && href !== '#' && !this.getAttribute('target')) {
+                e.preventDefault();
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    window.location.href = href;
+                }, 100);
+            }
+        });
+    });
 });

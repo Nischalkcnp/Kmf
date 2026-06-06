@@ -40,7 +40,7 @@ if ($slug === 'team') {
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<section class="py-12 md:py-20 lg:py-24 bg-white min-h-[60vh]">
+<section class="py-8 md:py-12 lg:py-16 bg-white min-h-[60vh]">
     <div class="container mx-auto px-4 lg:px-8">
         <div class="max-w-4xl mx-auto">
             <p class="text-kmf-orange font-bold uppercase tracking-widest text-xs md:text-sm mb-2"><?php echo $page['parent_id'] ? 'Sub Page' : 'Information'; ?></p>

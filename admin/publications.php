@@ -1,6 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/config/config.php';
-requireLogin();
+requirePermission('manage_publications');
 $adminTitle = 'Publications';
 
 $pdo = getDb();
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
     $excerpt = trim($_POST['excerpt'] ?? '');
     $type = in_array($_POST['type'] ?? '', ['publication','report','article']) ? $_POST['type'] : 'publication';
     $file_url = trim($_POST['file_url'] ?? '');
-    $image_url = trim($_POST['image_url'] ?? '');
+    $image_url = handleImageUpload('image_file', 'publications', $_POST['current_image_url'] ?? '');
     $published_at = trim($_POST['published_at'] ?? '') ?: null;
     $sort = (int)($_POST['sort_order'] ?? 0);
     $active = isset($_POST['is_active']) ? 1 : 0;
@@ -39,16 +39,21 @@ require_once __DIR__ . '/includes/header.php';
 <?php if (isset($_GET['updated'])): ?><p class="text-green-600 mb-4">Saved.</p><?php endif; ?>
 
 <?php if ($edit !== null): ?>
-<form method="post" class="bg-white rounded-lg shadow p-6 mb-6 max-w-3xl">
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 mb-6 max-w-3xl">
     <?php echo csrfField(); ?>
     <input type="hidden" name="id" value="<?php echo (int)$edit['id']; ?>">
+    <input type="hidden" name="current_image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>">
     <div class="space-y-4">
         <div><label class="block text-sm font-medium mb-1">Title</label><input type="text" name="title" value="<?php echo escape($edit['title']); ?>" class="w-full px-4 py-2 border rounded-lg" required></div>
         <div><label class="block text-sm font-medium mb-1">Slug</label><input type="text" name="slug" value="<?php echo escape($edit['slug']); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
         <div><label class="block text-sm font-medium mb-1">Excerpt</label><textarea name="excerpt" rows="2" class="w-full px-4 py-2 border rounded-lg"><?php echo escape($edit['excerpt']); ?></textarea></div>
         <div><label class="block text-sm font-medium mb-1">Type</label><select name="type" class="w-full px-4 py-2 border rounded-lg"><option value="publication" <?php echo ($edit['type']??'')==='publication'?'selected':''; ?>>Publication</option><option value="report" <?php echo ($edit['type']??'')==='report'?'selected':''; ?>>Report</option><option value="article" <?php echo ($edit['type']??'')==='article'?'selected':''; ?>>Article</option></select></div>
         <div><label class="block text-sm font-medium mb-1">File URL</label><input type="text" name="file_url" value="<?php echo escape($edit['file_url'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
-        <div><label class="block text-sm font-medium mb-1">Image URL</label><input type="text" name="image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
+        <div><label class="block text-sm font-medium mb-1">Thumbnail Image (Upload file)</label>
+        <?php if (!empty($edit['image_url'])): ?>
+            <img src="<?php echo BASE_URL . escape($edit['image_url']); ?>" class="h-20 w-auto mb-2 rounded border">
+        <?php endif; ?>
+        <input type="file" name="image_file" class="w-full text-sm"></div>
         <div><label class="block text-sm font-medium mb-1">Published Date</label><input type="date" name="published_at" value="<?php echo escape($edit['published_at'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
         <div><label class="block text-sm font-medium mb-1">Sort</label><input type="number" name="sort_order" value="<?php echo (int)($edit['sort_order'] ?? 0); ?>" class="w-24 px-4 py-2 border rounded-lg"></div>
         <div><label><input type="checkbox" name="is_active" value="1" <?php echo ($edit['is_active'] ?? 1) ? 'checked' : ''; ?>> Active</label></div>

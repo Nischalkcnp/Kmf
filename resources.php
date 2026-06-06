@@ -14,7 +14,7 @@ $pubs = array_filter($publications, fn($p) => $p['type'] === 'publication');
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<section class="py-12 md:py-20 lg:py-24 bg-white">
+<section class="py-8 md:py-12 lg:py-16 bg-white">
     <div class="container mx-auto px-4 lg:px-8">
         <div class="max-w-4xl mb-12 lg:mb-16">
             <p class="text-kmf-orange font-bold uppercase tracking-widest text-xs md:text-sm mb-2">Knowledge Hub</p>

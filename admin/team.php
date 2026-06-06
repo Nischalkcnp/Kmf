@@ -1,6 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/config/config.php';
-requireLogin();
+requirePermission('manage_team');
 $adminTitle = 'Team & Partners';
 
 $pdo = getDb();
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
         $name = trim($_POST['name'] ?? '');
         $role = trim($_POST['role'] ?? '');
         $bio = trim($_POST['bio'] ?? '');
-        $image_url = trim($_POST['image_url'] ?? '');
+        $image_url = handleImageUpload('image_file', 'team', $_POST['current_image_url'] ?? '');
         $type = in_array($_POST['type'] ?? '', ['board','staff']) ? $_POST['type'] : 'staff';
         $sort = (int)($_POST['sort_order'] ?? 0);
         $active = isset($_POST['is_active']) ? 1 : 0;
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
     if (isset($_POST['form_type']) && $_POST['form_type'] === 'partner') {
         $id = (int)($_POST['id'] ?? 0);
         $name = trim($_POST['name'] ?? '');
-        $logo_url = trim($_POST['logo_url'] ?? '');
+        $logo_url = handleImageUpload('logo_file', 'partners', $_POST['current_logo_url'] ?? '');
         $link_url = trim($_POST['link_url'] ?? '');
         $sort = (int)($_POST['sort_order'] ?? 0);
         $active = isset($_POST['is_active']) ? 1 : 0;
@@ -63,15 +63,20 @@ require_once __DIR__ . '/includes/header.php';
 
 <h2 class="text-lg font-semibold mt-8 mb-2">Team</h2>
 <?php if ($editTeam !== null): ?>
-<form method="post" class="bg-white rounded-lg shadow p-6 mb-6 max-w-2xl">
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 mb-6 max-w-2xl">
     <?php echo csrfField(); ?>
     <input type="hidden" name="form_type" value="team">
     <input type="hidden" name="id" value="<?php echo (int)$editTeam['id']; ?>">
+    <input type="hidden" name="current_image_url" value="<?php echo escape($editTeam['image_url'] ?? ''); ?>">
     <div class="space-y-4">
         <div><label class="block text-sm font-medium mb-1">Name</label><input type="text" name="name" value="<?php echo escape($editTeam['name']); ?>" class="w-full px-4 py-2 border rounded-lg" required></div>
         <div><label class="block text-sm font-medium mb-1">Role</label><input type="text" name="role" value="<?php echo escape($editTeam['role'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
         <div><label class="block text-sm font-medium mb-1">Bio</label><textarea name="bio" rows="3" class="w-full px-4 py-2 border rounded-lg"><?php echo escape($editTeam['bio'] ?? ''); ?></textarea></div>
-        <div><label class="block text-sm font-medium mb-1">Image URL</label><input type="text" name="image_url" value="<?php echo escape($editTeam['image_url'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
+        <div><label class="block text-sm font-medium mb-1">Image (Upload file)</label>
+        <?php if (!empty($editTeam['image_url'])): ?>
+            <img src="<?php echo BASE_URL . escape($editTeam['image_url']); ?>" class="h-20 w-auto mb-2 rounded border">
+        <?php endif; ?>
+        <input type="file" name="image_file" class="w-full text-sm"></div>
         <div><label class="block text-sm font-medium mb-1">Type</label><select name="type" class="w-full px-4 py-2 border rounded-lg"><option value="board" <?php echo ($editTeam['type']??'')==='board'?'selected':''; ?>>Board</option><option value="staff" <?php echo ($editTeam['type']??'')==='staff'?'selected':''; ?>>Staff</option></select></div>
         <div><label class="block text-sm font-medium mb-1">Sort</label><input type="number" name="sort_order" value="<?php echo (int)($editTeam['sort_order'] ?? 0); ?>" class="w-24 px-4 py-2 border rounded-lg"></div>
         <div><label><input type="checkbox" name="is_active" value="1" <?php echo ($editTeam['is_active'] ?? 1) ? 'checked' : ''; ?>> Active</label></div>
@@ -92,13 +97,18 @@ require_once __DIR__ . '/includes/header.php';
 
 <h2 class="text-lg font-semibold mt-12 mb-2">Partners</h2>
 <?php if ($editPartner !== null): ?>
-<form method="post" class="bg-white rounded-lg shadow p-6 mb-6 max-w-2xl">
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 mb-6 max-w-2xl">
     <?php echo csrfField(); ?>
     <input type="hidden" name="form_type" value="partner">
     <input type="hidden" name="id" value="<?php echo (int)$editPartner['id']; ?>">
+    <input type="hidden" name="current_logo_url" value="<?php echo escape($editPartner['logo_url'] ?? ''); ?>">
     <div class="space-y-4">
         <div><label class="block text-sm font-medium mb-1">Name</label><input type="text" name="name" value="<?php echo escape($editPartner['name']); ?>" class="w-full px-4 py-2 border rounded-lg" required></div>
-        <div><label class="block text-sm font-medium mb-1">Logo URL</label><input type="text" name="logo_url" value="<?php echo escape($editPartner['logo_url'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
+        <div><label class="block text-sm font-medium mb-1">Logo (Upload file)</label>
+        <?php if (!empty($editPartner['logo_url'])): ?>
+            <img src="<?php echo BASE_URL . escape($editPartner['logo_url']); ?>" class="h-20 w-auto mb-2 rounded border">
+        <?php endif; ?>
+        <input type="file" name="logo_file" class="w-full text-sm"></div>
         <div><label class="block text-sm font-medium mb-1">Link URL</label><input type="url" name="link_url" value="<?php echo escape($editPartner['link_url'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
         <div><label class="block text-sm font-medium mb-1">Sort</label><input type="number" name="sort_order" value="<?php echo (int)($editPartner['sort_order'] ?? 0); ?>" class="w-24 px-4 py-2 border rounded-lg"></div>
         <div><label><input type="checkbox" name="is_active" value="1" <?php echo ($editPartner['is_active'] ?? 1) ? 'checked' : ''; ?>> Active</label></div>

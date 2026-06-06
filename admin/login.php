@@ -11,16 +11,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pass = $_POST['password'] ?? '';
     if ($user && $pass) {
         $pdo = getDb();
-        $stmt = $pdo->prepare("SELECT id, username, password_hash FROM admin_users WHERE username = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, username, password_hash, status FROM admin_users WHERE username = ? LIMIT 1");
         $stmt->execute([$user]);
         $row = $stmt->fetch();
         if ($row && password_verify($pass, $row['password_hash'])) {
-            $_SESSION['admin_id'] = (int)$row['id'];
-            $_SESSION['admin_username'] = $row['username'];
-            redirect(BASE_URL . 'admin/index.php');
+            if (isset($row['status']) && $row['status'] !== 'active') {
+                $error = 'Your account has been deactivated.';
+            } else {
+                $_SESSION['admin_id'] = (int)$row['id'];
+                $_SESSION['admin_username'] = $row['username'];
+                redirect(BASE_URL . 'admin/index.php');
+            }
+        } else {
+            $error = 'Invalid username or password.';
         }
+    } else {
+        $error = 'Invalid username or password.';
     }
-    $error = 'Invalid username or password.';
 }
 ?>
 <!DOCTYPE html>
@@ -69,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="w-full max-w-md relative z-10">
         <!-- Logo/Header -->
         <div class="text-center mb-10">
-            <h1 class="text-3xl font-extrabold text-white font-montserrat tracking-tight mb-2">KMF <span class="text-kmf-orange">CMS</span></h1>
+            <h1 class="text-3xl font-extrabold text-white font-montserrat tracking-tight mb-2">KMTF <span class="text-kmf-orange">CMS</span></h1>
             <p class="text-gray-400 text-sm font-medium">Kanchhi Maya Tamang Foundation</p>
         </div>
 

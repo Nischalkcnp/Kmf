@@ -1,6 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/config/config.php';
-requireLogin();
+requirePermission('manage_events');
 $adminTitle = 'Events';
 
 $pdo = getDb();
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
     $event_date = trim($_POST['event_date'] ?? '') ?: null;
     $end_date = trim($_POST['end_date'] ?? '') ?: null;
     $venue = trim($_POST['venue'] ?? '');
-    $image_url = trim($_POST['image_url'] ?? '');
+    $image_url = handleImageUpload('image_file', 'events', $_POST['current_image_url'] ?? '');
     $type = in_array($_POST['type'] ?? '', ['upcoming','past']) ? $_POST['type'] : 'upcoming';
     $active = isset($_POST['is_active']) ? 1 : 0;
     if ($id) {
@@ -40,9 +40,10 @@ require_once __DIR__ . '/includes/header.php';
 <?php if (isset($_GET['updated'])): ?><p class="text-green-600 mb-4">Saved.</p><?php endif; ?>
 
 <?php if ($edit !== null): ?>
-<form method="post" class="bg-white rounded-lg shadow p-6 mb-6 max-w-3xl">
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 mb-6 max-w-3xl">
     <?php echo csrfField(); ?>
     <input type="hidden" name="id" value="<?php echo (int)$edit['id']; ?>">
+    <input type="hidden" name="current_image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>">
     <div class="space-y-4">
         <div><label class="block text-sm font-medium mb-1">Title</label><input type="text" name="title" value="<?php echo escape($edit['title']); ?>" class="w-full px-4 py-2 border rounded-lg" required></div>
         <div><label class="block text-sm font-medium mb-1">Slug</label><input type="text" name="slug" value="<?php echo escape($edit['slug']); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
@@ -53,7 +54,11 @@ require_once __DIR__ . '/includes/header.php';
             <div><label class="block text-sm font-medium mb-1">End Date</label><input type="date" name="end_date" value="<?php echo escape($edit['end_date'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
         </div>
         <div><label class="block text-sm font-medium mb-1">Venue</label><input type="text" name="venue" value="<?php echo escape($edit['venue'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
-        <div><label class="block text-sm font-medium mb-1">Image URL</label><input type="text" name="image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
+        <div><label class="block text-sm font-medium mb-1">Image (Upload file)</label>
+        <?php if (!empty($edit['image_url'])): ?>
+            <img src="<?php echo BASE_URL . escape($edit['image_url']); ?>" class="h-20 w-auto mb-2 rounded border">
+        <?php endif; ?>
+        <input type="file" name="image_file" class="w-full text-sm"></div>
         <div><label class="block text-sm font-medium mb-1">Type</label><select name="type" class="w-full px-4 py-2 border rounded-lg"><option value="upcoming" <?php echo ($edit['type']??'')==='upcoming'?'selected':''; ?>>Upcoming</option><option value="past" <?php echo ($edit['type']??'')==='past'?'selected':''; ?>>Past</option></select></div>
         <div><label><input type="checkbox" name="is_active" value="1" <?php echo ($edit['is_active'] ?? 1) ? 'checked' : ''; ?>> Active</label></div>
     </div>

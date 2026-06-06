@@ -12,7 +12,7 @@ $partners = $pdo->query("SELECT * FROM partners WHERE is_active = 1 ORDER BY sor
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<section class="py-12 md:py-20 lg:py-24 bg-white">
+<section class="py-8 md:py-12 lg:py-16 bg-white">
     <div class="container mx-auto px-4 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             <div class="order-2 lg:order-1">
@@ -55,13 +55,13 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 </section>
 
-<section id="team" class="py-12 md:py-20 lg:py-24 bg-gray-50">
+<section id="team" class="py-8 md:py-12 lg:py-16 bg-gray-50">
     <div class="container mx-auto px-4 lg:px-8">
         <div class="mb-12 lg:mb-16">
             <p class="text-kmf-orange font-bold uppercase tracking-widest text-xs md:text-sm mb-2">Leadership</p>
             <h2 class="text-3xl md:text-4xl font-extrabold text-kmf-blue">Meet Our Team</h2>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
             <?php foreach ($team as $t): ?>
             <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group hover:-translate-y-2">
                 <div class="relative w-32 h-32 mx-auto mb-6 transition-transform duration-300 group-hover:scale-110">
@@ -84,7 +84,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 </section>
 
-<section id="partners" class="py-12 md:py-20 lg:py-24 bg-white">
+<section id="partners" class="py-8 md:py-12 lg:py-16 bg-white">
     <div class="container mx-auto px-4 lg:px-8">
         <div class="text-center mb-12 lg:mb-16">
             <h2 class="text-3xl md:text-4xl font-extrabold text-kmf-blue inline-block relative">

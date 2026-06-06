@@ -1,6 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/config/config.php';
-requireLogin();
+requirePermission('manage_settings');
 $adminTitle = 'Settings';
 
 $pdo = getDb();
@@ -20,10 +20,23 @@ foreach ($keys as $k) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
+    $image_keys = ['logo_url', 'hero_image_1', 'hero_image_2', 'hero_image_3', 'hero_image_4', 'popup_image_url', 'president_image_url'];
+    
     foreach ($keys as $k) {
-        $v = trim($_POST[$k] ?? '');
-        $stmt = $pdo->prepare("UPDATE settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = ?");
-        $stmt->execute([$v, $k]);
+        if (in_array($k, $image_keys)) {
+            // Handle file upload
+            $file_key = $k . '_file';
+            $v = handleImageUpload($file_key, 'settings', $_POST[$k] ?? '');
+        } else {
+            $v = trim($_POST[$k] ?? '');
+        }
+        
+        $stmt = $pdo->prepare("
+            INSERT INTO settings (setting_key, setting_value) 
+            VALUES (?, ?) 
+            ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()
+        ");
+        $stmt->execute([$k, $v, $v]);
     }
     redirect(BASE_URL . 'admin/settings.php?updated=1');
 }
@@ -43,7 +56,7 @@ require_once __DIR__ . '/includes/header.php';
     <?php endif; ?>
 </div>
 
-<form method="post" class="space-y-12">
+<form method="post" enctype="multipart/form-data" class="space-y-12">
     <?php echo csrfField(); ?>
     
     <!-- Identity Section -->
@@ -67,9 +80,12 @@ require_once __DIR__ . '/includes/header.php';
                     class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
             </div>
             <div class="space-y-2 md:col-span-2">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Logo Path (from root)</label>
-                <input type="text" name="logo_url" value="<?php echo escape($settings['logo_url']); ?>" placeholder="assets/images/logo.jpg"
-                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Website Logo</label>
+                <?php if (!empty($settings['logo_url'])): ?>
+                    <img src="<?php echo BASE_URL . escape($settings['logo_url']); ?>" class="h-16 w-auto mb-2 rounded border">
+                <?php endif; ?>
+                <input type="hidden" name="logo_url" value="<?php echo escape($settings['logo_url']); ?>">
+                <input type="file" name="logo_url_file" class="w-full text-sm">
             </div>
         </div>
     </section>
@@ -170,9 +186,12 @@ require_once __DIR__ . '/includes/header.php';
                         class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue resize-none"><?php echo escape($settings['popup_content']); ?></textarea>
                 </div>
                 <div class="space-y-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Image URL (Optional)</label>
-                    <input type="text" name="popup_image_url" value="<?php echo escape($settings['popup_image_url']); ?>" placeholder="assets/images/hero_2.jpg"
-                        class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Popup Image (Optional)</label>
+                    <?php if (!empty($settings['popup_image_url'])): ?>
+                        <img src="<?php echo BASE_URL . escape($settings['popup_image_url']); ?>" class="h-16 w-auto mb-2 rounded border">
+                    <?php endif; ?>
+                    <input type="hidden" name="popup_image_url" value="<?php echo escape($settings['popup_image_url']); ?>">
+                    <input type="file" name="popup_image_url_file" class="w-full text-sm">
                 </div>
                 <div class="space-y-2">
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">CTA Button Text</label>
@@ -228,24 +247,36 @@ require_once __DIR__ . '/includes/header.php';
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
             <div class="space-y-2">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Hero Image 1 (Primary)</label>
-                <input type="text" name="hero_image_1" value="<?php echo escape($settings['hero_image_1']); ?>" placeholder="assets/images/hero-theme.png"
-                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Hero Image 1</label>
+                <?php if (!empty($settings['hero_image_1'])): ?>
+                    <img src="<?php echo BASE_URL . escape($settings['hero_image_1']); ?>" class="h-16 w-auto mb-2 rounded border">
+                <?php endif; ?>
+                <input type="hidden" name="hero_image_1" value="<?php echo escape($settings['hero_image_1']); ?>">
+                <input type="file" name="hero_image_1_file" class="w-full text-sm">
             </div>
             <div class="space-y-2">
                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Hero Image 2</label>
-                <input type="text" name="hero_image_2" value="<?php echo escape($settings['hero_image_2']); ?>" placeholder="assets/images/hero-health.png"
-                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+                <?php if (!empty($settings['hero_image_2'])): ?>
+                    <img src="<?php echo BASE_URL . escape($settings['hero_image_2']); ?>" class="h-16 w-auto mb-2 rounded border">
+                <?php endif; ?>
+                <input type="hidden" name="hero_image_2" value="<?php echo escape($settings['hero_image_2']); ?>">
+                <input type="file" name="hero_image_2_file" class="w-full text-sm">
             </div>
             <div class="space-y-2">
                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Hero Image 3</label>
-                <input type="text" name="hero_image_3" value="<?php echo escape($settings['hero_image_3']); ?>" placeholder="assets/images/hero-education.png"
-                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+                <?php if (!empty($settings['hero_image_3'])): ?>
+                    <img src="<?php echo BASE_URL . escape($settings['hero_image_3']); ?>" class="h-16 w-auto mb-2 rounded border">
+                <?php endif; ?>
+                <input type="hidden" name="hero_image_3" value="<?php echo escape($settings['hero_image_3']); ?>">
+                <input type="file" name="hero_image_3_file" class="w-full text-sm">
             </div>
             <div class="space-y-2">
                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Hero Image 4</label>
-                <input type="text" name="hero_image_4" value="<?php echo escape($settings['hero_image_4']); ?>" placeholder="assets/images/hero-community.png"
-                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+                <?php if (!empty($settings['hero_image_4'])): ?>
+                    <img src="<?php echo BASE_URL . escape($settings['hero_image_4']); ?>" class="h-16 w-auto mb-2 rounded border">
+                <?php endif; ?>
+                <input type="hidden" name="hero_image_4" value="<?php echo escape($settings['hero_image_4']); ?>">
+                <input type="file" name="hero_image_4_file" class="w-full text-sm">
             </div>
         </div>
     </section>
@@ -282,9 +313,12 @@ require_once __DIR__ . '/includes/header.php';
                     class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
             </div>
             <div class="space-y-2 md:col-span-2">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Photo URL (Paths from root, e.g. assets/images/photo.jpg)</label>
-                <input type="text" name="president_image_url" value="<?php echo escape($settings['president_image_url'] ?? ''); ?>" placeholder="assets/images/team-placeholder.jpg"
-                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">President's Photo</label>
+                <?php if (!empty($settings['president_image_url'])): ?>
+                    <img src="<?php echo BASE_URL . escape($settings['president_image_url']); ?>" class="h-20 w-auto mb-2 rounded border">
+                <?php endif; ?>
+                <input type="hidden" name="president_image_url" value="<?php echo escape($settings['president_image_url'] ?? ''); ?>">
+                <input type="file" name="president_image_url_file" class="w-full text-sm">
             </div>
             <div class="space-y-2 md:col-span-2">
                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Message Content (HTML allowed)</label>

@@ -26,19 +26,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<section class="py-12 md:py-20 lg:py-24 bg-white">
+<section class="py-8 md:py-12 bg-white">
     <div class="container mx-auto px-4 lg:px-8">
-        <div class="max-w-4xl mb-12 lg:mb-16">
-            <p class="text-kmf-orange font-bold uppercase tracking-widest text-xs md:text-sm mb-2">Contact</p>
-            <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-kmf-blue mb-6 leading-tight">Get in Touch</h1>
-            <p class="text-lg md:text-xl text-gray-600 font-medium">Have questions or want to support our mission? We'd love to hear from you. Reach out through the form or our contact details below.</p>
+        <div class="max-w-4xl mb-8">
+            <p class="text-kmf-orange font-bold uppercase tracking-widest text-xs md:text-sm mb-1">Contact</p>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-kmf-blue mb-4 leading-tight">Get in Touch</h1>
+            <p class="text-base md:text-lg text-gray-600 font-medium">Have questions or want to support our mission? We'd love to hear from you. Reach out through the form or our contact details below.</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
-            <div class="space-y-8">
-                <div class="bg-gray-50 rounded-3xl p-8 border border-gray-100 shadow-sm">
-                    <h2 class="text-2xl font-extrabold text-kmf-blue mb-6">Contact Information</h2>
-                    <div class="space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+            <div class="space-y-4">
+                <div class="bg-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm">
+                    <h2 class="text-xl font-extrabold text-kmf-blue mb-4">Contact Information</h2>
+                    <div class="space-y-4">
                         <?php if (getSetting('address')): ?>
                         <div class="flex gap-4">
                             <div class="flex-shrink-0 w-12 h-12 bg-kmf-orange/10 text-kmf-orange rounded-xl flex items-center justify-center">
@@ -76,12 +76,26 @@ require_once __DIR__ . '/includes/header.php';
                         <?php endif; ?>
                     </div>
                 </div>
+
+                <!-- Google Map Section -->
+                <div class="rounded-3xl overflow-hidden shadow-sm border border-gray-100 h-[250px] md:h-[300px] relative">
+                    <iframe 
+                        src="https://maps.google.com/maps?q=27.4914362,85.9030485&t=&z=14&ie=UTF8&iwloc=&output=embed"
+                        width="100%" 
+                        height="100%" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy" 
+                        referrerpolicy="no-referrer-when-downgrade"
+                        class="absolute inset-0"
+                    ></iframe>
+                </div>
             </div>
 
-            <div class="bg-white rounded-3xl p-8 lg:p-10 border border-gray-100 shadow-xl shadow-kmf-blue/5">
+            <div class="bg-white rounded-3xl p-6 lg:p-8 border border-gray-100 shadow-xl shadow-kmf-blue/5">
                 <?php if ($sent): ?>
-                    <div class="text-center py-12">
-                        <div class="w-20 h-20 bg-kmf-green/20 text-kmf-green rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-kmf-green/20 text-kmf-green rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                         </div>
                         <h3 class="text-2xl font-extrabold text-kmf-blue mb-2">Message Sent!</h3>
@@ -89,36 +103,37 @@ require_once __DIR__ . '/includes/header.php';
                         <a href="contact.php" class="inline-block mt-8 text-kmf-orange font-bold hover:underline">Send another message</a>
                     </div>
                 <?php else: ?>
-                    <h2 class="text-2xl font-extrabold text-kmf-blue mb-8">Send a Message</h2>
+                    <h2 class="text-xl font-extrabold text-kmf-blue mb-6">Send a Message</h2>
                     <?php if ($error): ?>
-                        <div class="bg-red-50 text-red-600 p-4 rounded-xl mb-6 font-medium border border-red-100"><?php echo escape($error); ?></div>
+                        <div class="bg-red-50 text-red-600 p-3 rounded-xl mb-4 text-sm font-medium border border-red-100"><?php echo escape($error); ?></div>
                     <?php endif; ?>
-                    <form method="post" action="" class="space-y-6">
+                    <form method="post" action="" class="space-y-4">
                         <?php echo csrfField(); ?>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="name" class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Full Name *</label>
-                                <input type="text" id="name" name="name" required placeholder="Your name" value="<?php echo escape($_POST['name'] ?? ''); ?>" class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-kmf-blue focus:bg-white transition-all outline-none">
+                                <label for="name" class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Full Name *</label>
+                                <input type="text" id="name" name="name" required placeholder="Your name" value="<?php echo escape($_POST['name'] ?? ''); ?>" class="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-kmf-blue focus:bg-white transition-all outline-none">
                             </div>
                             <div>
-                                <label for="email" class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email Address *</label>
-                                <input type="email" id="email" name="email" required placeholder="your.email@example.com" value="<?php echo escape($_POST['email'] ?? ''); ?>" class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-kmf-blue focus:bg-white transition-all outline-none">
+                                <label for="email" class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Email *</label>
+                                <input type="email" id="email" name="email" required placeholder="your@email.com" value="<?php echo escape($_POST['email'] ?? ''); ?>" class="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-kmf-blue focus:bg-white transition-all outline-none">
                             </div>
                         </div>
                         <div>
-                            <label for="subject" class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Subject</label>
-                            <input type="text" id="subject" name="subject" placeholder="How can we help?" value="<?php echo escape($_POST['subject'] ?? ''); ?>" class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-kmf-blue focus:bg-white transition-all outline-none">
+                            <label for="subject" class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Subject</label>
+                            <input type="text" id="subject" name="subject" placeholder="How can we help?" value="<?php echo escape($_POST['subject'] ?? ''); ?>" class="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-kmf-blue focus:bg-white transition-all outline-none">
                         </div>
                         <div>
-                            <label for="message" class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Message *</label>
-                            <textarea id="message" name="message" required rows="5" placeholder="Share your thoughts with us..." class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-kmf-blue focus:bg-white transition-all outline-none resize-none"><?php echo escape($_POST['message'] ?? ''); ?></textarea>
+                            <label for="message" class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Message *</label>
+                            <textarea id="message" name="message" required rows="4" placeholder="Share your thoughts..." class="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-kmf-blue focus:bg-white transition-all outline-none resize-none"><?php echo escape($_POST['message'] ?? ''); ?></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-kmf-orange hover:bg-kmf-orange-light text-white font-extrabold px-10 py-5 rounded-2xl transition-all shadow-lg shadow-kmf-orange/20 hover:scale-[1.02] active:scale-95">Send Your Message</button>
+                        <button type="submit" class="w-full bg-kmf-orange hover:bg-kmf-orange-light text-white font-extrabold px-6 py-4 rounded-xl text-sm transition-all shadow-md shadow-kmf-orange/20 hover:-translate-y-0.5 active:scale-95">Send Message</button>
                     </form>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 </section>
+
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

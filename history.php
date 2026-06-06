@@ -25,7 +25,7 @@ require_once __DIR__ . '/includes/header.php';
 </section>
 
 <!-- Timeline Section -->
-<section class="py-16 md:py-24 lg:py-32 bg-white relative overflow-hidden">
+<section class="py-10 md:py-16 lg:py-20 bg-white relative overflow-hidden">
     <!-- Decorative curve background -->
     <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-gray-50 to-white -translate-y-full"></div>
 
@@ -116,7 +116,7 @@ require_once __DIR__ . '/includes/header.php';
 </section>
 
 <!-- Call to Action -->
-<section class="py-20 bg-kmf-blue relative overflow-hidden">
+<section class="py-12 bg-kmf-blue relative overflow-hidden">
     <div class="absolute inset-0 z-0 opacity-20">
          <img src="<?php echo BASE_URL; ?>assets/images/history-hero.png" alt="History Bg" class="w-full h-full object-cover">
     </div>

@@ -1,6 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/config/config.php';
-requireLogin();
+requirePermission('manage_news');
 $adminTitle = 'News';
 
 $pdo = getDb();
@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
     $slug = trim($_POST['slug'] ?? '') ?: slugify($title);
     $excerpt = trim($_POST['excerpt'] ?? '');
     $content = $_POST['content'] ?? '';
-    $image_url = trim($_POST['image_url'] ?? '');
+    $image_url = handleImageUpload('image_file', 'news', $_POST['current_image_url'] ?? '');
     $published_at = trim($_POST['published_at'] ?? '') ?: null;
     $featured = isset($_POST['is_featured']) ? 1 : 0;
     $active = isset($_POST['is_active']) ? 1 : 0;
@@ -38,15 +38,20 @@ require_once __DIR__ . '/includes/header.php';
 <?php if (isset($_GET['updated'])): ?><p class="text-green-600 mb-4">Saved.</p><?php endif; ?>
 
 <?php if ($edit !== null): ?>
-<form method="post" class="bg-white rounded-lg shadow p-6 mb-6 max-w-3xl">
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 mb-6 max-w-3xl">
     <?php echo csrfField(); ?>
     <input type="hidden" name="id" value="<?php echo (int)$edit['id']; ?>">
+    <input type="hidden" name="current_image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>">
     <div class="space-y-4">
         <div><label class="block text-sm font-medium mb-1">Title</label><input type="text" name="title" value="<?php echo escape($edit['title']); ?>" class="w-full px-4 py-2 border rounded-lg" required></div>
         <div><label class="block text-sm font-medium mb-1">Slug</label><input type="text" name="slug" value="<?php echo escape($edit['slug']); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
         <div><label class="block text-sm font-medium mb-1">Excerpt</label><textarea name="excerpt" rows="2" class="w-full px-4 py-2 border rounded-lg"><?php echo escape($edit['excerpt']); ?></textarea></div>
         <div><label class="block text-sm font-medium mb-1">Content (HTML)</label><textarea name="content" rows="8" class="w-full px-4 py-2 border rounded-lg"><?php echo escape($edit['content'] ?? ''); ?></textarea></div>
-        <div><label class="block text-sm font-medium mb-1">Image URL</label><input type="text" name="image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
+        <div><label class="block text-sm font-medium mb-1">Image (Upload file)</label>
+        <?php if (!empty($edit['image_url'])): ?>
+            <img src="<?php echo BASE_URL . escape($edit['image_url']); ?>" class="h-20 w-auto mb-2 rounded border">
+        <?php endif; ?>
+        <input type="file" name="image_file" class="w-full text-sm"></div>
         <div><label class="block text-sm font-medium mb-1">Published (datetime)</label><input type="datetime-local" name="published_at" value="<?php echo escape($edit['published_at'] ?? ''); ?>" class="w-full px-4 py-2 border rounded-lg"></div>
         <div><label><input type="checkbox" name="is_featured" value="1" <?php echo ($edit['is_featured'] ?? 0) ? 'checked' : ''; ?>> Featured</label></div>
         <div><label><input type="checkbox" name="is_active" value="1" <?php echo ($edit['is_active'] ?? 1) ? 'checked' : ''; ?>> Active</label></div>

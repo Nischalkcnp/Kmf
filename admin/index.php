@@ -1,6 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/config/config.php';
-requireLogin();
+requirePermission('access_admin');
 
 $adminTitle = 'Dashboard';
 $pdo = getDb();
@@ -15,7 +15,29 @@ $counts = [
 ];
 
 require_once __DIR__ . '/includes/header.php';
+
+// Display and clear flash error/success if present
+$flash_error = $_SESSION['flash_error'] ?? '';
+unset($_SESSION['flash_error']);
+$flash_success = $_SESSION['flash_success'] ?? '';
+unset($_SESSION['flash_success']);
 ?>
+<?php if ($flash_error): ?>
+<div class="mb-8 flex items-center gap-3 bg-red-50 px-6 py-4 rounded-2xl border border-red-100 animate-headShake">
+    <div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    </div>
+    <p class="text-sm font-bold text-red-600"><?php echo escape($flash_error); ?></p>
+</div>
+<?php endif; ?>
+<?php if ($flash_success): ?>
+<div class="mb-8 flex items-center gap-3 bg-green-50 px-6 py-4 rounded-2xl border border-green-100">
+    <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <p class="text-sm font-bold text-green-600"><?php echo escape($flash_success); ?></p>
+</div>
+<?php endif; ?>
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
     <div>
         <h2 class="text-3xl font-extrabold text-kmf-blue font-montserrat tracking-tight">System Overview</h2>
@@ -44,6 +66,7 @@ require_once __DIR__ . '/includes/header.php';
         ['label' => 'Strategic Areas', 'count' => $counts['areas'], 'url' => 'admin/areas.php', 'color' => 'orange', 'icon' => 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'],
         ['label' => 'Active Programs', 'count' => $counts['programs'], 'url' => 'admin/programs.php', 'color' => 'green', 'icon' => 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'],
         ['label' => 'Latest Stories', 'count' => $counts['news'], 'url' => 'admin/news.php', 'color' => 'blue', 'icon' => 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z'],
+        ['label' => 'Contact Messages', 'count' => $counts['contacts'], 'url' => 'admin/messages.php', 'color' => 'orange', 'icon' => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'],
     ];
 
     foreach ($statsCards as $card):
@@ -66,13 +89,13 @@ require_once __DIR__ . '/includes/header.php';
     <div class="p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
         <h3 class="text-xl font-extrabold text-kmf-blue mb-6">Quick Actions</h3>
         <div class="grid grid-cols-2 gap-4">
-            <a href="<?php echo BASE_URL; ?>admin/news_edit.php" class="flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-slate-200 hover:border-kmf-orange hover:shadow-lg transition-all group">
+            <a href="<?php echo BASE_URL; ?>admin/news.php?edit=0" class="flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-slate-200 hover:border-kmf-orange hover:shadow-lg transition-all group">
                 <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 mb-3 group-hover:bg-kmf-orange group-hover:text-white transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 </div>
                 <span class="text-xs font-bold text-slate-600">Post New Story</span>
             </a>
-            <a href="<?php echo BASE_URL; ?>admin/publications_edit.php" class="flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-slate-200 hover:border-kmf-orange hover:shadow-lg transition-all group">
+            <a href="<?php echo BASE_URL; ?>admin/publications.php?edit=0" class="flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-slate-200 hover:border-kmf-orange hover:shadow-lg transition-all group">
                 <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 mb-3 group-hover:bg-kmf-orange group-hover:text-white transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                 </div>
