@@ -86,33 +86,27 @@ $stmt = $pdo->query("SELECT * FROM pages WHERE parent_id IS NULL ORDER BY sort_o
 $topPages = $stmt->fetchAll();
 
 $donatePage = null;
-foreach ($topPages as $page):
-    if ($page['slug'] === 'donate' || $page['slug'] === 'donate.php') {
-        $donatePage = $page;
+foreach ($topPages as $topPage):
+    if ($topPage['slug'] === 'donate' || $topPage['slug'] === 'donate.php') {
+        $donatePage = $topPage;
         continue;
     }
 
     // Fetch subpages
     $stmtSub = $pdo->prepare("SELECT * FROM pages WHERE parent_id = ? ORDER BY sort_order ASC, title ASC");
-    $stmtSub->execute([$page['id']]);
+    $stmtSub->execute([$topPage['id']]);
     $subPages = $stmtSub->fetchAll();
 
-    $isActive = (isset($_GET['slug']) && $_GET['slug'] == $page['slug']) || $currentSlug == $page['slug'];
+    $isActive = (isset($_GET['slug']) && $_GET['slug'] == $topPage['slug']) || $currentSlug == $topPage['slug'];
     $hasSubmenu = !empty($subPages);
-    $isDonate = ($page['slug'] == 'donate.php' || $page['slug'] == 'donate');
+    $isDonate = ($topPage['slug'] == 'donate.php' || $topPage['slug'] == 'donate');
 
-    // Link logic: prefer existing .php file if it matches the slug
-    $linkUrl = BASE_URL . 'view.php?slug=' . urlencode($page['slug']);
-    if (file_exists(ROOT_PATH . $page['slug'] . '.php')) {
-        $linkUrl = BASE_URL . $page['slug'] . '.php';
-    }
-    elseif (file_exists(ROOT_PATH . $page['slug'])) {
-        $linkUrl = BASE_URL . $page['slug'];
-    }
+    // Link logic using global helper function
+    $linkUrl = getPageUrl($topPage['slug']);
 ?>
                         <div class="relative group/menu">
                             <a href="<?php echo $linkUrl; ?>" class="nav-link-animate lg:px-2 xl:px-4 py-2 rounded-xl text-sm transition-all duration-300 <?php echo $isActive ? 'bg-white/10 text-kmf-green-light' : ($isDonate ? 'text-kmf-green-light hover:text-kmf-green-light hover:bg-white/5' : 'hover:bg-white/5 text-gray-200 hover:text-kmf-green-light'); ?> <?php echo $isDonate ? 'font-black tracking-widest uppercase' : 'font-semibold tracking-wide'; ?> flex items-center gap-1.5 whitespace-nowrap">
-                                <?php echo escape($page['title']); ?>
+                                <?php echo escape($topPage['title']); ?>
                                 <?php if ($hasSubmenu): ?>
                                     <svg class="w-4 h-4 opacity-50 group-hover/menu:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                 <?php
@@ -123,13 +117,7 @@ foreach ($topPages as $page):
                             <div class="absolute top-full left-0 w-56 pt-4 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all duration-300 translate-y-2 group-hover/menu:translate-y-0 z-50">
                                 <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 overflow-hidden transform-gpu">
                                     <?php foreach ($subPages as $sub):
-            $subUrl = BASE_URL . 'view.php?slug=' . urlencode($sub['slug']);
-            if (file_exists(ROOT_PATH . $sub['slug'] . '.php')) {
-                $subUrl = BASE_URL . $sub['slug'] . '.php';
-            }
-            elseif (file_exists(ROOT_PATH . $sub['slug'])) {
-                $subUrl = BASE_URL . $sub['slug'];
-            }
+            $subUrl = getPageUrl($sub['slug']);
 ?>
                                     <a href="<?php echo $subUrl; ?>" class="block px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-kmf-green-light rounded-xl transition-all">
                                         <?php echo escape($sub['title']); ?>
@@ -149,13 +137,7 @@ endforeach; ?>
                     <!-- Donate Button & Social Icons -->
                     <div class="flex items-center lg:gap-2 xl:gap-4 lg:pl-3 xl:pl-6 border-l border-white/10">
                         <?php if (isset($donatePage) && $donatePage):
-    $donateUrl = BASE_URL . 'view.php?slug=' . urlencode($donatePage['slug']);
-    if (file_exists(ROOT_PATH . $donatePage['slug'] . '.php')) {
-        $donateUrl = BASE_URL . $donatePage['slug'] . '.php';
-    }
-    elseif (file_exists(ROOT_PATH . $donatePage['slug'])) {
-        $donateUrl = BASE_URL . $donatePage['slug'];
-    }
+    $donateUrl = getPageUrl($donatePage['slug']);
 ?>
                             <a href="<?php echo $donateUrl; ?>" class="hidden lg:inline-flex nav-link-animate px-6 py-2.5 rounded-xl text-sm font-bold tracking-widest uppercase text-white bg-kmf-green hover:bg-kmf-green-light shadow-[0_0_15px_rgba(46,196,182,0.3)] transition-all duration-300 transform hover:-translate-y-0.5 whitespace-nowrap">
                                 <?php echo escape($donatePage['title']); ?>
@@ -189,96 +171,89 @@ endforeach;
                 </button>
             </div>
         </div>
+    </header>
 
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="fixed inset-0 z-[60] bg-kmf-blue-dark text-white lg:hidden transition-transform duration-500 translate-x-full overflow-y-auto" style="background-color: #132640;">
-            <button type="button" id="nav-close" class="absolute top-6 right-6 p-2 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-colors" aria-label="Close Menu">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-            <div class="flex flex-col h-full p-8 pt-24 min-h-0">
-                <nav class="flex-1 flex flex-col gap-4 overflow-y-auto pb-12 min-h-0">
-                <?php foreach ($topPages as $page):
-    if ($page['slug'] === 'donate' || $page['slug'] === 'donate.php')
+    <!-- Mobile Menu Backdrop -->
+    <div id="mobile-menu-backdrop" class="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-500 lg:hidden"></div>
+
+    <!-- Mobile Menu Drawer (outside header to escape stacking context) -->
+    <div id="mobile-menu" class="fixed top-0 right-0 h-full w-full max-w-sm z-[9999] text-white flex flex-col transition-transform duration-500 ease-in-out translate-x-full lg:hidden" style="background-color: #132640;">
+        <!-- Close Button -->
+        <button type="button" id="nav-close" class="absolute top-6 right-6 p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors z-10" aria-label="Close Menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto px-8 pt-24 pb-8 flex flex-col">
+
+            <!-- Brand mark at top -->
+            <a href="<?php echo BASE_URL; ?>index.php" class="flex items-center gap-3 mb-10 group">
+                <div class="h-12 w-12 bg-white rounded-xl flex items-center justify-center p-1.5 shadow-lg">
+                    <img src="<?php echo BASE_URL . $logoUrl; ?>" alt="<?php echo escape($siteName); ?>" class="max-h-full max-w-full object-contain">
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-extrabold text-base leading-none text-white font-montserrat">KMTF</span>
+                    <span class="text-[10px] text-white/60 mt-0.5">कान्छी माया तामाङ फाउण्डेशन</span>
+                </div>
+            </a>
+
+            <!-- Nav Links -->
+            <nav class="flex flex-col gap-2 flex-1">
+                <?php foreach ($topPages as $topPage):
+    if ($topPage['slug'] === 'donate' || $topPage['slug'] === 'donate.php')
         continue;
-
     $stmtSub = $pdo->prepare("SELECT * FROM pages WHERE parent_id = ? ORDER BY sort_order ASC, title ASC");
-    $stmtSub->execute([$page['id']]);
+    $stmtSub->execute([$topPage['id']]);
     $subPages = $stmtSub->fetchAll();
     $hasSubmenu = !empty($subPages);
-    $linkUrl = BASE_URL . 'view.php?slug=' . urlencode($page['slug']);
-    if (file_exists(ROOT_PATH . $page['slug'] . '.php')) {
-        $linkUrl = BASE_URL . $page['slug'] . '.php';
-    }
-    elseif (file_exists(ROOT_PATH . $page['slug'])) {
-        $linkUrl = BASE_URL . $page['slug'];
-    }
-?>
-                <?php
-    $isActive = (isset($_GET['slug']) && $_GET['slug'] == $page['slug']) || $currentSlug == $page['slug'];
+    $linkUrl = getPageUrl($topPage['slug']);
+    $isActive = (isset($_GET['slug']) && $_GET['slug'] == $topPage['slug']) || $currentSlug == $topPage['slug'];
 ?>
                 <div class="flex flex-col">
-                    <a href="<?php echo $linkUrl; ?>" class="text-2xl font-black flex items-center justify-between <?php echo $isActive ? 'text-kmf-green-light' : 'text-white'; ?>">
-                        <?php echo escape($page['title']); ?>
+                    <a href="<?php echo $linkUrl; ?>" class="text-lg font-bold py-3 px-4 rounded-xl flex items-center justify-between transition-all duration-200 <?php echo $isActive ? 'bg-white/10 text-kmf-green-light' : 'text-white hover:bg-white/10 hover:text-kmf-green-light'; ?>">
+                        <?php echo escape($topPage['title']); ?>
+                        <?php if ($hasSubmenu): ?>
+                        <svg class="w-4 h-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <?php endif; ?>
                     </a>
                     <?php if ($hasSubmenu): ?>
-                    <div class="mt-4 ml-4 flex flex-col gap-3 border-l-2 border-white/10 pl-6 pb-2">
+                    <div class="ml-4 mt-1 mb-2 flex flex-col gap-1 border-l-2 border-white/10 pl-4">
                         <?php foreach ($subPages as $sub):
-            $subUrl = BASE_URL . 'view.php?slug=' . urlencode($sub['slug']);
-            if (file_exists(ROOT_PATH . $sub['slug'] . '.php')) {
-                $subUrl = BASE_URL . $sub['slug'] . '.php';
-            }
-            elseif (file_exists(ROOT_PATH . $sub['slug'])) {
-                $subUrl = BASE_URL . $sub['slug'];
-            }
-?>
-                        <a href="<?php echo $subUrl; ?>" class="text-lg font-medium text-gray-400 hover:text-kmf-green-light transition-colors">
+            $subUrl = getPageUrl($sub['slug']); ?>
+                        <a href="<?php echo $subUrl; ?>" class="text-sm font-medium text-white/60 hover:text-kmf-green-light py-2 px-3 rounded-lg hover:bg-white/5 transition-all">
                             <?php echo escape($sub['title']); ?>
                         </a>
-                        <?php
-        endforeach; ?>
+                        <?php endforeach; ?>
                     </div>
-                    <?php
-    endif; ?>
+                    <?php endif; ?>
                 </div>
-                <?php
-endforeach; ?>
-                
-                <?php if (isset($donatePage) && $donatePage):
-    $donateUrl = BASE_URL . 'view.php?slug=' . urlencode($donatePage['slug']);
-    if (file_exists(ROOT_PATH . $donatePage['slug'] . '.php')) {
-        $donateUrl = BASE_URL . $donatePage['slug'] . '.php';
-    }
-    elseif (file_exists(ROOT_PATH . $donatePage['slug'])) {
-        $donateUrl = BASE_URL . $donatePage['slug'];
-    }
-?>
-                    <a href="<?php echo $donateUrl; ?>" class="text-2xl font-black tracking-widest uppercase text-kmf-green-light mt-4 pt-4 border-t border-white/10">
-                        <?php echo escape($donatePage['title']); ?>
-                    </a>
-                <?php
-endif; ?>
+                <?php endforeach; ?>
             </nav>
-            <div class="mt-8 pt-8 border-t border-white/10 flex gap-6">
-                <!-- Mobile Socials -->
-                <?php
-foreach ($socials as $soc):
-    $link = getSetting($soc[0]);
-    if ($link):
-?>
-                <a href="<?php echo escape($link); ?>" target="_blank" class="text-gray-400">
-                    <?php echo $soc[1]; ?>
+
+            <!-- Divider -->
+            <div class="border-t border-white/10 mt-6 pt-6 flex flex-col gap-4">
+
+                <?php if (isset($donatePage) && $donatePage):
+    $donateUrl = getPageUrl($donatePage['slug']); ?>
+                <a href="<?php echo $donateUrl; ?>" class="block w-full bg-kmf-orange hover:bg-kmf-orange-light text-white text-center font-extrabold py-4 rounded-2xl shadow-lg shadow-kmf-orange/20 transition-all">
+                    <?php echo escape($donatePage['title']); ?>
                 </a>
-                <?php
-    endif;
-endforeach;
-?>
+                <?php endif; ?>
+
+                <!-- Social Icons -->
+                <div class="flex gap-4 pt-2">
+                    <?php foreach ($socials as $soc):
+    $link = getSetting($soc[0]);
+    if ($link): ?>
+                    <a href="<?php echo escape($link); ?>" target="_blank" class="text-white/40 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5">
+                        <?php echo $soc[1]; ?>
+                    </a>
+                    <?php endif; endforeach; ?>
+                </div>
             </div>
-            <div class="mt-auto">
-                <a href="<?php echo BASE_URL; ?>donate.php" class="block w-full bg-kmf-orange text-white text-center font-extrabold py-5 rounded-3xl shadow-xl shadow-kmf-orange/20">DONATE NOW</a>
-            </div>
+
         </div>
     </div>
-</header>
 
     <!-- Popup Notice -->
     <?php include_once ROOT_PATH . 'includes/popup.php'; ?>

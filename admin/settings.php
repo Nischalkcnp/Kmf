@@ -10,17 +10,21 @@ $keys = [
     'hero_image_1', 'hero_image_2', 'hero_image_3', 'hero_image_4',
     'hero_badge', 'hero_title', 'hero_subtitle',
     'popup_enabled', 'popup_title', 'popup_content', 'popup_image_url', 'popup_cta_text', 'popup_cta_link', 'popup_frequency',
-    'president_enabled', 'president_name', 'president_role', 'president_image_url', 'president_message'
+    'president_enabled', 'president_name', 'president_role', 'president_image_url', 'president_message',
+    'about_image', 'about_badge_number', 'about_badge_text',
+    'donate_heading', 'donate_subheading', 'donate_account_name', 'donate_bank_name',
+    'donate_bank_branch', 'donate_account_no', 'donate_swift', 'donate_qr_image', 'donate_other_help'
 ];
 $settings = [];
 foreach ($keys as $k) {
     $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
     $stmt->execute([$k]);
-    $settings[$k] = $stmt->fetchColumn() ?: '';
+    $val = $stmt->fetchColumn();
+    $settings[$k] = ($val !== false) ? $val : '';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
-    $image_keys = ['logo_url', 'hero_image_1', 'hero_image_2', 'hero_image_3', 'hero_image_4', 'popup_image_url', 'president_image_url'];
+    $image_keys = ['logo_url', 'hero_image_1', 'hero_image_2', 'hero_image_3', 'hero_image_4', 'popup_image_url', 'president_image_url', 'about_image', 'donate_qr_image'];
     
     foreach ($keys as $k) {
         if (in_array($k, $image_keys)) {
@@ -142,6 +146,39 @@ require_once __DIR__ . '/includes/header.php';
                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Our Goal</label>
                 <textarea name="goal" rows="2" 
                     class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue resize-none"><?php echo escape($settings['goal']); ?></textarea>
+            </div>
+        </div>
+    </section>
+    
+    <!-- About Us Page Customization Section -->
+    <section>
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-kmf-blue uppercase tracking-wider text-sm">About Us Page Customization</h3>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
+            <div class="space-y-2 md:col-span-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">About Story Image</label>
+                <?php if (!empty($settings['about_image'])): ?>
+                    <img src="<?php echo BASE_URL . escape($settings['about_image']); ?>" class="h-32 w-auto mb-2 rounded border shadow-sm">
+                <?php else: ?>
+                    <p class="text-xs text-slate-400 font-medium mb-2">Currently using default image: assets/images/about-women-community.jpg</p>
+                <?php endif; ?>
+                <input type="hidden" name="about_image" value="<?php echo escape($settings['about_image']); ?>">
+                <input type="file" name="about_image_file" class="w-full text-sm">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Image Badge Number / Stat (e.g., 100%)</label>
+                <input type="text" name="about_badge_number" value="<?php echo escape($settings['about_badge_number'] ?: '100%'); ?>" 
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Image Badge Label (e.g., Local Impact)</label>
+                <input type="text" name="about_badge_text" value="<?php echo escape($settings['about_badge_text'] ?: 'Local Impact'); ?>" 
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
             </div>
         </div>
     </section>
@@ -325,6 +362,83 @@ require_once __DIR__ . '/includes/header.php';
                 <textarea name="president_message" rows="5" 
                     class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue resize-none"><?php echo escape($settings['president_message'] ?? ''); ?></textarea>
             </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ DONATE PAGE ═══════════════ -->
+    <section>
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-8 h-8 rounded-lg bg-kmf-orange/10 flex items-center justify-center text-kmf-orange">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-kmf-blue uppercase tracking-wider text-sm">Donate Page</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
+
+            <div class="space-y-2 md:col-span-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Page Heading</label>
+                <input type="text" name="donate_heading" value="<?php echo escape($settings['donate_heading'] ?? ''); ?>"
+                    placeholder="Your Support Empowers Rural Communities"
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Sub-heading / Description</label>
+                <textarea name="donate_subheading" rows="2"
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue resize-none"><?php echo escape($settings['donate_subheading'] ?? ''); ?></textarea>
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Account Name</label>
+                <input type="text" name="donate_account_name" value="<?php echo escape($settings['donate_account_name'] ?? ''); ?>"
+                    placeholder="KANCHHI MAYA TAMANG FOUNDATION"
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Bank Name</label>
+                <input type="text" name="donate_bank_name" value="<?php echo escape($settings['donate_bank_name'] ?? ''); ?>"
+                    placeholder="Global IME Bank"
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Bank Branch</label>
+                <input type="text" name="donate_bank_branch" value="<?php echo escape($settings['donate_bank_branch'] ?? ''); ?>"
+                    placeholder="Kathmandu, Nepal"
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Account Number</label>
+                <input type="text" name="donate_account_no" value="<?php echo escape($settings['donate_account_no'] ?? ''); ?>"
+                    placeholder="001002003004005"
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">SWIFT Code</label>
+                <input type="text" name="donate_swift" value="<?php echo escape($settings['donate_swift'] ?? ''); ?>"
+                    placeholder="GIME NP KA"
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue">
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">QR Code Image (for eSewa / FonePay / Khalti)</label>
+                <?php if (!empty($settings['donate_qr_image'])): ?>
+                    <img src="<?php echo BASE_URL . escape($settings['donate_qr_image']); ?>" class="h-32 w-auto mb-2 rounded border shadow-sm">
+                <?php endif; ?>
+                <input type="hidden" name="donate_qr_image" value="<?php echo escape($settings['donate_qr_image'] ?? ''); ?>">
+                <input type="file" name="donate_qr_image_file" accept="image/*" class="w-full text-sm">
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">"Other Ways to Help" Text</label>
+                <textarea name="donate_other_help" rows="2"
+                    class="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue resize-none"><?php echo escape($settings['donate_other_help'] ?? ''); ?></textarea>
+            </div>
+
         </div>
     </section>
 

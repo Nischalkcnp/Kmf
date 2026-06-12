@@ -14,7 +14,7 @@ if (isset($_GET['edit'])) {
         $stmt->execute([$id]);
         $edit = $stmt->fetch();
     } else {
-        $edit = ['id'=>0,'slug'=>'','title'=>'','content'=>'','meta_description'=>'','parent_id'=>null,'sort_order'=>0];
+        $edit = ['id'=>0,'slug'=>'','title'=>'','content'=>'','meta_description'=>'','image_url'=>'','parent_id'=>null,'sort_order'=>0];
     }
 }
 
@@ -26,14 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
     $meta = trim($_POST['meta_description'] ?? '');
     $parent_id = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
     $sort_order = (int)($_POST['sort_order'] ?? 0);
+    $image_url = handleImageUpload('image_file', 'pages', $_POST['current_image_url'] ?? '');
 
     if ($slug && $title) {
         if ($id) {
-            $stmt = $pdo->prepare("UPDATE pages SET slug=?, title=?, content=?, meta_description=?, parent_id=?, sort_order=? WHERE id=?");
-            $stmt->execute([$slug, $title, $content, $meta, $parent_id, $sort_order, $id]);
+            $stmt = $pdo->prepare("UPDATE pages SET slug=?, title=?, content=?, meta_description=?, image_url=?, parent_id=?, sort_order=? WHERE id=?");
+            $stmt->execute([$slug, $title, $content, $meta, $image_url, $parent_id, $sort_order, $id]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO pages (slug, title, content, meta_description, parent_id, sort_order) VALUES (?,?,?,?,?,?)");
-            $stmt->execute([$slug, $title, $content, $meta, $parent_id, $sort_order]);
+            $stmt = $pdo->prepare("INSERT INTO pages (slug, title, content, meta_description, image_url, parent_id, sort_order) VALUES (?,?,?,?,?,?,?)");
+            $stmt->execute([$slug, $title, $content, $meta, $image_url, $parent_id, $sort_order]);
         }
         redirect(BASE_URL . 'admin/pages.php?updated=1');
     }
@@ -72,9 +73,10 @@ require_once __DIR__ . '/includes/header.php';
         <h3 class="text-xl font-bold text-kmf-blue"><?php echo $edit['id'] ? 'Edit Page' : 'Create New Page'; ?></h3>
     </div>
 
-    <form method="post" class="space-y-6">
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
         <?php echo csrfField(); ?>
         <input type="hidden" name="id" value="<?php echo (int)($edit['id'] ?? 0); ?>">
+        <input type="hidden" name="current_image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>">
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
@@ -125,6 +127,26 @@ require_once __DIR__ . '/includes/header.php';
             <input type="text" name="meta_description" value="<?php echo escape($edit['meta_description']); ?>"
                 class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue"
                 placeholder="Brief summary for search results...">
+        </div>
+
+        <div class="space-y-2">
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Featured / Header Image</label>
+            <?php if (!empty($edit['image_url'])): ?>
+                <div class="mb-3 relative group w-48 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+                    <img src="<?php echo BASE_URL . escape($edit['image_url']); ?>" alt="Page Image" class="w-full h-32 object-cover">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span class="text-white text-[10px] font-bold uppercase tracking-wider">Current Image</span>
+                    </div>
+                </div>
+            <?php endif; ?>
+            <div class="relative flex items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 hover:border-kmf-orange transition-colors bg-slate-50/50">
+                <input type="file" name="image_file" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                <div class="text-center pointer-events-none">
+                    <svg class="w-8 h-8 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span class="text-xs font-bold text-slate-400 block">Drag & drop or Click to Upload</span>
+                    <span class="text-[10px] text-slate-300 font-medium mt-1 block">Supports JPG, PNG, WEBP (Max 2MB)</span>
+                </div>
+            </div>
         </div>
 
         <div class="space-y-2">
@@ -180,12 +202,7 @@ require_once __DIR__ . '/includes/header.php';
                 <td class="px-6 py-5 bg-slate-50/30 last:rounded-r-[2rem] border-y border-r border-slate-50 text-right">
                     <div class="flex items-center justify-end gap-2">
                         <?php 
-                        $viewUrl = BASE_URL . 'view.php?slug=' . urlencode($p['slug']);
-                        if (file_exists(ROOT_PATH . $p['slug'] . '.php')) {
-                            $viewUrl = BASE_URL . $p['slug'] . '.php';
-                        } elseif (file_exists(ROOT_PATH . $p['slug'])) {
-                            $viewUrl = BASE_URL . $p['slug'];
-                        }
+                        $viewUrl = getPageUrl($p['slug']);
                         ?>
                         <a href="<?php echo $viewUrl; ?>" target="_blank" class="p-2.5 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-kmf-blue hover:shadow-sm transition-all" title="View Page">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>

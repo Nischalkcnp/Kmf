@@ -65,6 +65,15 @@ require_once __DIR__ . '/includes/header.php';
                                         <?php echo $story['content']; ?>
                                     </div>
                                 <?php endif; ?>
+                                
+                                <?php if (!empty($story['link_url'])): ?>
+                                    <div class="mt-6 <?php echo $isEven ? 'flex md:justify-end' : 'flex md:justify-start'; ?>">
+                                        <a href="<?php echo escape($story['link_url']); ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-kmf-orange text-slate-700 hover:text-white font-bold text-sm rounded-xl transition-all duration-300 shadow-sm hover:shadow-md">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                            <span><?php echo escape($story['link_text'] ?: 'Read More'); ?></span>
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
 

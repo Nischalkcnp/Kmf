@@ -8,7 +8,7 @@ $items = $pdo->query("SELECT * FROM case_stories ORDER BY story_date DESC")->fet
 $edit = null;
 if (isset($_GET['edit'])) {
     $id = (int)$_GET['edit'];
-    if ($id === 0) $edit = ['id'=>0,'title'=>'','slug'=>'','excerpt'=>'','content'=>'','image_before_url'=>'','image_after_url'=>'','story_date'=>date('Y-m-d'),'is_active'=>1];
+    if ($id === 0) $edit = ['id'=>0,'title'=>'','slug'=>'','excerpt'=>'','content'=>'','image_before_url'=>'','image_after_url'=>'','link_url'=>'','link_text'=>'','story_date'=>date('Y-m-d'),'is_active'=>1];
     else { $stmt = $pdo->prepare("SELECT * FROM case_stories WHERE id = ?"); $stmt->execute([$id]); $edit = $stmt->fetch(); }
 }
 
@@ -22,16 +22,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
     // Handle Uploads using shared function
     $image_before_url = handleImageUpload('image_before_file', 'case_stories', $_POST['existing_image_before_url'] ?? '');
     $image_after_url = handleImageUpload('image_after_file', 'case_stories', $_POST['existing_image_after_url'] ?? '');
+    $link_url = trim($_POST['link_url'] ?? '');
+    $link_text = trim($_POST['link_text'] ?? '');
 
     $story_date = trim($_POST['story_date'] ?? '') ?: null;
     $active = isset($_POST['is_active']) ? 1 : 0;
     
     if ($id) {
-        $stmt = $pdo->prepare("UPDATE case_stories SET title=?, slug=?, excerpt=?, content=?, image_before_url=?, image_after_url=?, story_date=?, is_active=? WHERE id=?");
-        $stmt->execute([$title, $slug, $excerpt, $content, $image_before_url, $image_after_url, $story_date, $active, $id]);
+        $stmt = $pdo->prepare("UPDATE case_stories SET title=?, slug=?, excerpt=?, content=?, image_before_url=?, image_after_url=?, link_url=?, link_text=?, story_date=?, is_active=? WHERE id=?");
+        $stmt->execute([$title, $slug, $excerpt, $content, $image_before_url, $image_after_url, $link_url, $link_text, $story_date, $active, $id]);
     } else {
-        $stmt = $pdo->prepare("INSERT INTO case_stories (title, slug, excerpt, content, image_before_url, image_after_url, story_date, is_active) VALUES (?,?,?,?,?,?,?,?)");
-        $stmt->execute([$title, $slug, $excerpt, $content, $image_before_url, $image_after_url, $story_date, $active]);
+        $stmt = $pdo->prepare("INSERT INTO case_stories (title, slug, excerpt, content, image_before_url, image_after_url, link_url, link_text, story_date, is_active) VALUES (?,?,?,?,?,?,?,?,?,?)");
+        $stmt->execute([$title, $slug, $excerpt, $content, $image_before_url, $image_after_url, $link_url, $link_text, $story_date, $active]);
     }
     redirect(BASE_URL . 'admin/case-stories.php?updated=1');
 }
@@ -87,6 +89,12 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         </div>
         
+        <div><label class="block text-sm font-medium mb-1 text-gray-700">Link URL</label>
+        <input type="url" name="link_url" value="<?php echo escape($edit['link_url'] ?? ''); ?>" placeholder="https://example.com/more-info" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-kmf-blue"></div>
+        
+        <div><label class="block text-sm font-medium mb-1 text-gray-700">Link Text</label>
+        <input type="text" name="link_text" value="<?php echo escape($edit['link_text'] ?? ''); ?>" placeholder="Read More / View Case Document" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-kmf-blue"></div>
+
         <div><label class="block text-sm font-medium mb-1 text-gray-700">Timeline Date (YYYY-MM-DD)</label>
         <input type="date" name="story_date" value="<?php echo escape($edit['story_date']); ?>" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg"></div>
         

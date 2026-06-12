@@ -18,9 +18,14 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Mobile nav transition */
-#mobile-nav {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+/* Mobile menu drawer */
+#mobile-menu {
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Mobile backdrop */
+#mobile-menu-backdrop {
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Glassmorphism utilities */
@@ -91,4 +96,16 @@ input:focus, textarea:focus, select:focus {
 
 .marquee-content:hover {
     animation-play-state: paused;
+}
+
+/* Hero background slide smooth transition & Ken Burns effect */
+.hero-bg-slide {
+    opacity: 0;
+    transform: scale(1.08);
+    transition: opacity 2s ease-in-out, transform 6s ease-out !important;
+}
+
+.hero-bg-slide.active {
+    opacity: 1;
+    transform: scale(1);
 }

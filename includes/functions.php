@@ -24,6 +24,31 @@ function getPageBySlug(string $slug): ?array {
     return $row ?: null;
 }
 
+function getPageUrl(string $slug): string {
+    // Custom mappings for special slugs to their respective static php files
+    $customMappings = [
+        'areas' => 'what-we-do.php',
+        'publications' => 'resources.php',
+        'news' => 'news.php?tab=gallery',
+        'news-and-media' => 'news.php?tab=gallery',
+    ];
+
+    if (isset($customMappings[$slug])) {
+        return BASE_URL . $customMappings[$slug];
+    }
+
+    if (file_exists(ROOT_PATH . $slug . '.php')) {
+        return BASE_URL . $slug . '.php';
+    }
+
+    if (file_exists(ROOT_PATH . $slug)) {
+        return BASE_URL . $slug;
+    }
+
+    return BASE_URL . 'view.php?slug=' . urlencode($slug);
+}
+
+
 function slugify(string $text): string {
     $text = preg_replace('~[^\pL\d]+~u', '-', $text);
     $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);

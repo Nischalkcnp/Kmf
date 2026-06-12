@@ -7,7 +7,7 @@ $metaDescription = 'Latest news, updates, photos, and videos from Kanchhi Maya T
 $pdo = getDb();
 
 // Active tab selection
-$activeTab = in_array($_GET['tab'] ?? '', ['news', 'gallery']) ? $_GET['tab'] : 'news';
+$activeTab = in_array($_GET['tab'] ?? '', ['news', 'gallery']) ? $_GET['tab'] : 'gallery';
 
 // Helper to extract YouTube ID
 function getYouTubeId($url) {
@@ -26,6 +26,10 @@ function getYouTubeEmbedUrl($url) {
 
 if ($activeTab === 'news') {
     $news = $pdo->query("SELECT * FROM news WHERE is_active = 1 ORDER BY published_at DESC")->fetchAll();
+    $popupEnabled = getSetting('popup_enabled', '0');
+    $popupTitle = getSetting('popup_title');
+    $popupContent = getSetting('popup_content');
+    $popupImageUrl = getSetting('popup_image_url');
 } else {
     // Fetch projects that have active media items
     $galleryProjects = $pdo->query("
@@ -80,6 +84,37 @@ require_once __DIR__ . '/includes/header.php';
         <?php if ($activeTab === 'news'): ?>
             <!-- News & Updates Tab -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in">
+                <?php if ($popupEnabled === '1' && !empty($popupTitle)): ?>
+                <article class="group bg-slate-50 rounded-3xl overflow-hidden border border-kmf-orange/20 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full relative ring-2 ring-kmf-orange/10">
+                    <?php
+                        $popupImg = !empty($popupImageUrl) ? $popupImageUrl : 'assets/images/news-placeholder.svg';
+                    ?>
+                    <div class="relative overflow-hidden h-56 <?php echo !empty($popupImageUrl) ? 'cursor-zoom-in' : ''; ?>" <?php echo !empty($popupImageUrl) ? 'onclick="openLightbox(\'' . BASE_URL . escape($popupImg) . '\')"' : ''; ?>>
+                        <img src="<?php echo BASE_URL . escape($popupImg); ?>" alt="<?php echo escape($popupTitle); ?>" class="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-110">
+                        <div class="absolute top-4 left-4">
+                            <span class="inline-block py-1.5 px-4 bg-kmf-orange text-white text-[10px] font-extrabold uppercase tracking-widest rounded-full shadow-sm">Announcement</span>
+                        </div>
+                        <?php if (!empty($popupImageUrl)): ?>
+                        <!-- Overlay indicator on hover for images -->
+                        <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <span class="bg-black/60 text-white px-4 py-2 rounded-full text-xs font-semibold tracking-wider flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m4-3H6"/></svg>
+                                View Full Size
+                            </span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="p-6 lg:p-8 flex flex-col flex-1">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="w-2.5 h-2.5 rounded-full bg-kmf-orange animate-pulse"></span>
+                            <p class="text-xs font-black uppercase tracking-wider text-kmf-orange">Active Notice</p>
+                        </div>
+                        <h2 class="text-xl md:text-2xl font-extrabold text-kmf-blue mb-4 leading-tight group-hover:text-kmf-orange transition-colors"><?php echo escape($popupTitle); ?></h2>
+                        <p class="text-gray-600 text-sm font-medium leading-relaxed mb-6 flex-1"><?php echo nl2br(escape($popupContent)); ?></p>
+                    </div>
+                </article>
+                <?php endif; ?>
+
                 <?php foreach ($news as $n): ?>
                 <article id="news-<?php echo (int)$n['id']; ?>" class="group scroll-mt-24 bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full">
                     <?php
@@ -99,13 +134,25 @@ require_once __DIR__ . '/includes/header.php';
                         <h2 class="text-xl md:text-2xl font-extrabold text-kmf-blue mb-4 leading-tight group-hover:text-kmf-orange transition-colors"><?php echo escape($n['title']); ?></h2>
                         <p class="text-gray-600 text-sm font-medium leading-relaxed mb-6 flex-1"><?php echo escape($n['excerpt']); ?></p>
                         
-                        <?php if (!empty($n['content'])): ?>
-                            <div class="pt-6 border-t border-gray-50 mt-auto">
-                                <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('span').textContent = this.nextElementSibling.classList.contains('hidden') ? 'Read More' : 'Read Less'" class="flex items-center gap-2 text-kmf-orange font-bold text-sm group/btn">
-                                    <span>Read More</span>
-                                    <svg class="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                                </button>
-                                <div class="prose-custom text-sm mt-6 text-gray-600 hidden transition-all duration-300"><?php echo $n['content']; ?></div>
+                        <?php if (!empty($n['content']) || !empty($n['link_url'])): ?>
+                            <div class="pt-6 border-t border-gray-50 mt-auto flex flex-wrap items-center justify-between gap-4">
+                                <?php if (!empty($n['content'])): ?>
+                                    <button onclick="const contentDiv = this.closest('.mt-auto').querySelector('.prose-custom'); contentDiv.classList.toggle('hidden'); this.querySelector('span').textContent = contentDiv.classList.contains('hidden') ? 'Read More' : 'Read Less'" class="flex items-center gap-2 text-kmf-orange font-bold text-sm group/btn">
+                                        <span>Read More</span>
+                                        <svg class="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                                    </button>
+                                <?php endif; ?>
+
+                                <?php if (!empty($n['link_url'])): ?>
+                                    <a href="<?php echo escape($n['link_url']); ?>" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 text-slate-500 hover:text-kmf-orange font-semibold text-sm transition-colors group/link">
+                                        <svg class="w-4 h-4 text-gray-400 group-hover/link:text-kmf-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                        <span><?php echo escape($n['link_text'] ?: 'Related Link'); ?></span>
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if (!empty($n['content'])): ?>
+                                    <div class="prose-custom text-sm mt-4 text-gray-600 hidden transition-all duration-300 w-full"><?php echo $n['content']; ?></div>
+                                <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -113,7 +160,7 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
             </div>
 
-            <?php if (empty($news)): ?>
+            <?php if (empty($news) && ($popupEnabled !== '1' || empty($popupTitle))): ?>
                 <div class="bg-gray-50 rounded-2xl p-12 text-center border border-dashed border-gray-300">
                     <p class="text-gray-500 font-medium italic">We'll be sharing news and updates here soon.</p>
                 </div>
