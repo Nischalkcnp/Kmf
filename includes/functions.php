@@ -188,3 +188,46 @@ function handleImageUpload(string $key, string $subfolder = 'uploads', string $c
 
     return $current_url;
 }
+
+/**
+ * Handle Single Video Upload
+ * @param string $key Name attribute of the file input
+ * @param string $subfolder Subfolder inside assets/
+ * @param string $current_url Current video URL to return if no new file uploaded
+ * @return string The path to the uploaded video or the current video URL
+ */
+function handleVideoUpload(string $key, string $subfolder = 'videos', string $current_url = ''): string {
+    if (!isset($_FILES[$key]) || $_FILES[$key]['error'] !== UPLOAD_ERR_OK) {
+        return $current_url;
+    }
+
+    $uploadDir = dirname(__DIR__) . '/assets/' . trim($subfolder, '/') . '/';
+    if (!is_dir($uploadDir)) {
+        @mkdir($uploadDir, 0755, true);
+    }
+
+    $file = $_FILES[$key];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $allowed = ['mp4', 'webm', 'ogg', 'mov', 'avi'];
+
+    if (!in_array($ext, $allowed)) {
+        return $current_url;
+    }
+
+    $filename = time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+    $targetPath = $uploadDir . $filename;
+
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        // Safe clean up of the old local video file if it exists and was local
+        if ($current_url && strpos($current_url, 'assets/videos/') === 0) {
+            $oldPath = dirname(__DIR__) . '/' . $current_url;
+            if (file_exists($oldPath)) {
+                @unlink($oldPath);
+            }
+        }
+        return 'assets/' . trim($subfolder, '/') . '/' . $filename;
+    }
+
+    return $current_url;
+}
+

@@ -24,15 +24,26 @@ if (isset($_GET['delete'])) {
     if (isset($_GET['csrf']) && hash_equals($_SESSION['csrf_token'] ?? '', $_GET['csrf'])) {
         $delId = (int)$_GET['delete'];
         
-        // Fetch item first to delete local uploaded image if exists
-        $stmt = $pdo->prepare("SELECT image_url FROM gallery WHERE id = ?");
+        // Fetch item first to delete local uploaded image & video if exists
+        $stmt = $pdo->prepare("SELECT image_url, video_url FROM gallery WHERE id = ?");
         $stmt->execute([$delId]);
-        $img = $stmt->fetchColumn();
+        $media = $stmt->fetch();
         
-        if ($img && strpos($img, 'assets/images/gallery/') === 0) {
-            $fullPath = dirname(__DIR__) . '/' . $img;
-            if (file_exists($fullPath)) {
-                @unlink($fullPath);
+        if ($media) {
+            $img = $media['image_url'];
+            $vid = $media['video_url'];
+            
+            if ($img && strpos($img, 'assets/images/gallery/') === 0) {
+                $fullPath = dirname(__DIR__) . '/' . $img;
+                if (file_exists($fullPath)) {
+                    @unlink($fullPath);
+                }
+            }
+            if ($vid && strpos($vid, 'assets/videos/') === 0) {
+                $fullPath = dirname(__DIR__) . '/' . $vid;
+                if (file_exists($fullPath)) {
+                    @unlink($fullPath);
+                }
             }
         }
         
@@ -64,7 +75,8 @@ if (isset($_GET['edit'])) {
             'category' => 'photo',
             'video_url' => '',
             'sort_order' => 0,
-            'is_active' => 1
+            'is_active' => 1,
+            'is_about_us' => 0
         ];
     }
 }
@@ -78,17 +90,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
     $video_url = trim($_POST['video_url'] ?? '');
     $sort = (int)($_POST['sort_order'] ?? 0);
     $active = isset($_POST['is_active']) ? 1 : 0;
+    $is_about_us = isset($_POST['is_about_us']) ? 1 : 0;
     
     $current_image = $_POST['current_image_url'] ?? '';
+    $current_video = $_POST['current_video_url'] ?? '';
     
     // Upload image
     $uploaded_image = handleImageUpload('image_file', 'gallery', $current_image);
     
-    // Auto-resolve video thumbnail from YouTube if no custom image is uploaded
-    if ($category === 'video' && !empty($video_url) && empty($uploaded_image)) {
-        $ytId = getYouTubeId($video_url);
-        if ($ytId) {
-            $uploaded_image = "https://img.youtube.com/vi/{$ytId}/hqdefault.jpg";
+    // Upload local video
+    $uploaded_video = handleVideoUpload('video_file', 'videos', $current_video);
+    
+    if ($category === 'video') {
+        if (!empty($uploaded_video)) {
+            $video_url = $uploaded_video;
+        }
+        
+        // Pasted YouTube URL overrides local uploaded video (and deletes the local video file)
+        $youtube_input = trim($_POST['video_url'] ?? '');
+        if (!empty($youtube_input) && (strpos($youtube_input, 'http') === 0 || getYouTubeId($youtube_input))) {
+            $video_url = $youtube_input;
+            if ($uploaded_video && strpos($uploaded_video, 'assets/videos/') === 0) {
+                $oldPath = dirname(__DIR__) . '/' . $uploaded_video;
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+        }
+        
+        // Auto-resolve video thumbnail from YouTube if no custom image is uploaded
+        if (strpos($video_url, 'assets/videos/') !== 0 && empty($uploaded_image)) {
+            $ytId = getYouTubeId($video_url);
+            if ($ytId) {
+                $uploaded_image = "https://img.youtube.com/vi/{$ytId}/hqdefault.jpg";
+            }
+        }
+        
+        // Use placeholder image if no video thumbnail is uploaded or resolved
+        if (empty($uploaded_image)) {
+            $uploaded_image = 'assets/images/video-placeholder.png';
         }
     }
     
@@ -96,19 +136,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCsrf()) {
     if ($category === 'photo' && empty($uploaded_image)) {
         $error = 'Please upload an image file for the photo.';
     } elseif ($category === 'video' && empty($video_url)) {
-        $error = 'Please enter a video URL.';
-    } elseif ($category === 'video' && !getYouTubeId($video_url)) {
-        $error = 'Please enter a valid YouTube URL.';
+        $error = 'Please upload a video file or enter a YouTube URL.';
+    } elseif ($category === 'video' && strpos($video_url, 'assets/videos/') !== 0 && !getYouTubeId($video_url)) {
+        $error = 'Please upload a valid video file or enter a valid YouTube URL.';
     } else {
         if ($id > 0) {
             // Update
-            $stmt = $pdo->prepare("UPDATE gallery SET title = ?, program_id = ?, image_url = ?, category = ?, video_url = ?, sort_order = ?, is_active = ? WHERE id = ?");
-            $stmt->execute([$title, $program_id, $uploaded_image, $category, $video_url, $sort, $active, $id]);
+            $stmt = $pdo->prepare("UPDATE gallery SET title = ?, program_id = ?, image_url = ?, category = ?, video_url = ?, sort_order = ?, is_active = ?, is_about_us = ? WHERE id = ?");
+            $stmt->execute([$title, $program_id, $uploaded_image, $category, $video_url, $sort, $active, $is_about_us, $id]);
             redirect(BASE_URL . 'admin/gallery.php?updated=1');
         } else {
             // Insert
-            $stmt = $pdo->prepare("INSERT INTO gallery (title, program_id, image_url, category, video_url, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $program_id, $uploaded_image, $category, $video_url, $sort, $active]);
+            $stmt = $pdo->prepare("INSERT INTO gallery (title, program_id, image_url, category, video_url, sort_order, is_active, is_about_us) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $program_id, $uploaded_image, $category, $video_url, $sort, $active, $is_about_us]);
             redirect(BASE_URL . 'admin/gallery.php?created=1');
         }
     }
@@ -178,6 +218,7 @@ require_once __DIR__ . '/includes/header.php';
         <?php echo csrfField(); ?>
         <input type="hidden" name="id" value="<?php echo (int)($edit['id'] ?? 0); ?>">
         <input type="hidden" name="current_image_url" value="<?php echo escape($edit['image_url'] ?? ''); ?>">
+        <input type="hidden" name="current_video_url" value="<?php echo escape($edit['video_url'] ?? ''); ?>">
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
@@ -189,7 +230,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <div class="space-y-2">
                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Project / Program wise</label>
-                <select name="program_id" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue" required>
+                <select name="program_id" id="program_id_select" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue" required>
                     <option value="">-- Select Project --</option>
                     <?php foreach ($programs as $prog): ?>
                         <option value="<?php echo $prog['id']; ?>" <?php echo ($edit['program_id'] == $prog['id']) ? 'selected' : ''; ?>><?php echo escape($prog['title']); ?></option>
@@ -218,12 +259,27 @@ require_once __DIR__ . '/includes/header.php';
         </div>
 
         <!-- Video fields -->
-        <div id="video_url_field" class="space-y-2 <?php echo ($edit['category'] === 'video') ? '' : 'hidden'; ?>">
-            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">YouTube Video URL</label>
-            <input type="url" name="video_url" id="video_url_input" value="<?php echo escape($edit['video_url'] ?? ''); ?>"
-                class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue"
-                placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ">
-            <p class="text-[10px] text-slate-400 font-bold ml-1 uppercase">Supports standard YouTube or Shorts URLs.</p>
+        <div id="video_url_field" class="space-y-6 <?php echo ($edit['category'] === 'video') ? '' : 'hidden'; ?>">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">YouTube Video URL</label>
+                    <input type="url" name="video_url" id="video_url_input" value="<?php echo (strpos($edit['video_url'] ?? '', 'assets/videos/') !== 0) ? escape($edit['video_url'] ?? '') : ''; ?>"
+                        class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-kmf-orange/10 focus:border-kmf-orange outline-none transition-all font-medium text-kmf-blue"
+                        placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                    <p class="text-[10px] text-slate-400 font-bold ml-1 uppercase">Supports standard YouTube or Shorts URLs.</p>
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Upload Local Video File</label>
+                    <?php if (!empty($edit['video_url']) && strpos($edit['video_url'], 'assets/videos/') === 0): ?>
+                        <div class="mb-2 p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                            <span class="text-xs font-bold text-kmf-blue truncate max-w-[200px]"><?php echo basename($edit['video_url']); ?></span>
+                            <span class="text-[9px] font-black bg-kmf-blue text-white px-2 py-0.5 rounded uppercase">Uploaded</span>
+                        </div>
+                    <?php endif; ?>
+                    <input type="file" name="video_file" class="w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-kmf-blue/5 file:text-kmf-blue hover:file:bg-kmf-blue/10 transition-colors">
+                    <p class="text-[10px] text-slate-400 font-bold ml-1 uppercase">Supported formats: MP4, WebM, OGG, MOV.</p>
+                </div>
+            </div>
         </div>
 
         <!-- Upload Image field -->
@@ -257,6 +313,15 @@ require_once __DIR__ . '/includes/header.php';
             </label>
         </div>
 
+        <div class="space-y-2">
+            <label class="inline-flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="is_about_us" id="is_about_us_checkbox" value="1" <?php echo ($edit['is_about_us'] ?? 0) ? 'checked' : ''; ?>
+                    class="rounded text-kmf-orange focus:ring-kmf-orange border-slate-300 w-5 h-5">
+                <span class="text-sm font-bold text-slate-600">Show on About Us Page</span>
+            </label>
+            <p class="text-[10px] text-slate-400 font-bold ml-8 uppercase">If checked, this item will appear in the About Us page gallery, and choosing a project is optional.</p>
+        </div>
+
         <div class="pt-6 flex flex-col md:flex-row gap-4">
             <button type="submit" class="flex-1 bg-kmf-orange hover:bg-kmf-orange-light text-white font-extrabold py-5 rounded-2xl shadow-xl shadow-kmf-orange/20 transition-all duration-300 transform hover:-translate-y-1">
                 Save Gallery Item
@@ -271,22 +336,40 @@ require_once __DIR__ . '/includes/header.php';
 <script>
 function toggleCategoryFields(cat) {
     const videoUrlField = document.getElementById('video_url_field');
-    const videoUrlInput = document.getElementById('video_url_input');
     const imageLabel = document.getElementById('image_label');
     const imageHelp = document.getElementById('image_help_text');
     
     if (cat === 'video') {
         videoUrlField.classList.remove('hidden');
-        videoUrlInput.setAttribute('required', 'required');
         imageLabel.textContent = 'Custom Video Thumbnail (Optional)';
-        imageHelp.textContent = 'Leave blank to auto-fetch the YouTube high-resolution thumbnail.';
+        imageHelp.textContent = 'Leave blank to auto-fetch the YouTube high-resolution thumbnail or use the default placeholder.';
     } else {
         videoUrlField.classList.add('hidden');
-        videoUrlInput.removeAttribute('required');
         imageLabel.textContent = 'Photo Upload';
         imageHelp.textContent = 'Supported formats: JPG, JPEG, PNG, WEBP, GIF.';
     }
 }
+
+// Dynamically manage 'required' attribute on program_id selection
+document.addEventListener('DOMContentLoaded', () => {
+    const isAboutUsCheckbox = document.getElementById('is_about_us_checkbox');
+    const programSelect = document.getElementById('program_id_select');
+    
+    function updateProgramRequired() {
+        if (isAboutUsCheckbox && programSelect) {
+            if (isAboutUsCheckbox.checked) {
+                programSelect.removeAttribute('required');
+            } else {
+                programSelect.setAttribute('required', 'required');
+            }
+        }
+    }
+    
+    if (isAboutUsCheckbox) {
+        isAboutUsCheckbox.addEventListener('change', updateProgramRequired);
+        updateProgramRequired();
+    }
+});
 </script>
 <?php endif; ?>
 
@@ -312,6 +395,11 @@ function toggleCategoryFields(cat) {
                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider <?php echo $item['category'] === 'video' ? 'bg-red-500 text-white shadow-sm' : 'bg-kmf-blue text-white shadow-sm'; ?>">
                         <?php echo escape($item['category']); ?>
                     </span>
+                    <?php if ($item['is_about_us']): ?>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black bg-kmf-orange text-white uppercase tracking-wider shadow-sm">
+                            About Us
+                        </span>
+                    <?php endif; ?>
                     <?php if (!$item['is_active']): ?>
                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black bg-slate-400 text-white uppercase tracking-wider shadow-sm">
                             Inactive

@@ -88,6 +88,7 @@ try {
     
     $scripts = [
         'migrate_gallery_project.php' => 'Gallery/Programs columns migration',
+        'migrate_about_us_gallery.php' => 'Gallery About Us column migration',
         'create_strategic_area_photos.php' => 'Strategic area photos table migration',
         'create_program_photos.php' => 'Program photos table and seeding migration',
         'seed_area_photos.php' => 'Strategic area photos seeding'

@@ -12,6 +12,26 @@ $partners = $pdo->query("SELECT * FROM partners WHERE is_active = 1 ORDER BY sor
 $boardMembers = array_filter($team, fn($t) => $t['type'] === 'board');
 $staffMembers = array_filter($team, fn($t) => $t['type'] === 'staff');
 
+$aboutMedia = $pdo->query("SELECT * FROM gallery WHERE is_active = 1 AND is_about_us = 1 AND category = 'video' ORDER BY sort_order ASC, id DESC")->fetchAll();
+
+// YouTube URL Helpers
+if (!function_exists('getYouTubeId')) {
+    function getYouTubeId($url) {
+        $pattern = '%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i';
+        if (preg_match($pattern, $url, $match)) {
+            return $match[1];
+        }
+        return null;
+    }
+}
+
+if (!function_exists('getYouTubeEmbedUrl')) {
+    function getYouTubeEmbedUrl($url) {
+        $id = getYouTubeId($url);
+        return $id ? "https://www.youtube.com/embed/{$id}?autoplay=1" : '';
+    }
+}
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -51,6 +71,219 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     </div>
 </section>
+
+<!-- ═══════════════════════════════════════════════
+     VIDEOS GALLERY SECTION
+════════════════════════════════════════════════ -->
+<?php if (!empty($aboutMedia)): ?>
+<section class="py-6 bg-gray-50/50 border-b border-gray-100 overflow-hidden animate-fade-in">
+    <div class="container mx-auto px-4 lg:px-8">
+        <!-- Section Header -->
+        <div class="text-center max-w-2xl mx-auto mb-6">
+            <span class="inline-block text-kmf-orange font-bold uppercase tracking-[0.25em] text-xs mb-1">Watch in Action</span>
+            <h2 class="text-2xl md:text-3xl font-black text-kmf-blue font-montserrat tracking-tight">Our Videos</h2>
+            <div class="h-1 w-12 bg-kmf-orange mx-auto mt-2.5 rounded-full"></div>
+        </div>
+
+        <!-- Centered Media Cards Container with Larger Thumbnails -->
+        <div class="flex flex-wrap justify-center gap-8 max-w-6xl mx-auto">
+            <?php foreach ($aboutMedia as $item): 
+                $isLocal = strpos($item['video_url'], 'assets/videos/') === 0;
+                $srcUrl = $isLocal ? BASE_URL . $item['video_url'] : getYouTubeEmbedUrl($item['video_url']);
+                $thumb = $item['image_url'];
+            ?>
+            <div class="group relative w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-md aspect-[16/9] rounded-3xl overflow-hidden bg-slate-900 shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 cursor-pointer"
+                 data-gallery-item>
+                
+                <!-- Trigger area for Lightbox -->
+                <div class="w-full h-full"
+                     data-lightbox-trigger 
+                     data-type="video" 
+                     data-src="<?php echo escape($srcUrl); ?>" 
+                     data-title="<?php echo escape($item['title'] ?: 'Foundation Video'); ?>" 
+                     data-project="About Us">
+                    
+                    <!-- Thumbnail Image -->
+                    <img src="<?php echo (strpos($thumb, 'http') === 0) ? $thumb : BASE_URL . $thumb; ?>" 
+                         alt="<?php echo escape($item['title']); ?>" 
+                         class="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110 opacity-95 group-hover:opacity-100">
+                    
+                    <!-- Play icon overlay for videos -->
+                    <div class="absolute inset-0 flex items-center justify-center z-10">
+                        <div class="w-14 h-14 rounded-full bg-kmf-orange/95 flex items-center justify-center text-white shadow-xl transform transition-all duration-500 group-hover:scale-110 group-hover:bg-kmf-orange-light">
+                            <svg class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                    </div>
+
+                    <!-- Category Badge -->
+                    <div class="absolute top-4 left-4 z-10">
+                        <span class="inline-flex py-1 px-3.5 bg-black/60 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-widest rounded-full border border-white/10 shadow-sm">
+                            <?php echo $isLocal ? 'Local Video' : 'YouTube'; ?>
+                        </span>
+                    </div>
+
+                    <!-- Info Overlay -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
+                        <h4 class="text-white font-extrabold text-base leading-tight font-montserrat truncate mb-1"><?php echo escape($item['title'] ?: 'Watch Video'); ?></h4>
+                        <p class="text-[10px] text-slate-300 font-extrabold uppercase tracking-widest flex items-center gap-1.5">
+                            <span>Click to play</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+
+<!-- Lightbox Modal -->
+<div id="lightbox-modal" class="fixed inset-0 z-[100] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300">
+    <!-- Close Button -->
+    <button id="lightbox-close" class="absolute top-6 right-6 text-white hover:text-kmf-orange transition-colors p-3.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 shadow-lg" aria-label="Close Lightbox">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    
+    <!-- Prev Button -->
+    <button id="lightbox-prev" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white hover:text-kmf-orange transition-all p-3.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 shadow-lg hidden md:block" aria-label="Previous">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    
+    <!-- Next Button -->
+    <button id="lightbox-next" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white hover:text-kmf-orange transition-all p-3.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 shadow-lg hidden md:block" aria-label="Next">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+    </button>
+    
+    <!-- Content Container -->
+    <div class="max-w-4xl w-full flex flex-col items-center">
+        <!-- Media Target -->
+        <div id="lightbox-media-container" class="w-full flex justify-center items-center relative min-h-[300px]">
+            <img id="lightbox-image" src="" alt="" class="max-h-[75vh] max-w-full object-contain rounded-3xl shadow-2xl transition-all duration-300 hidden">
+            <div id="lightbox-video-container" class="w-full aspect-video hidden max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+                <iframe id="lightbox-iframe" class="w-full h-full border-0" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+            <video id="lightbox-local-video" class="max-h-[75vh] w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border border-white/10 hidden" controls autoplay></video>
+        </div>
+        <!-- Caption / Text -->
+        <div class="text-center mt-6 px-4">
+            <h3 id="lightbox-caption" class="text-white font-extrabold text-lg md:text-2xl font-montserrat tracking-tight leading-snug"></h3>
+            <p id="lightbox-project" class="text-kmf-orange font-bold text-xs uppercase tracking-[0.2em] mt-2"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let activeIndex = -1;
+    
+    function getVisibleTriggers() {
+        return Array.from(document.querySelectorAll('[data-lightbox-trigger]'));
+    }
+    
+    const modal = document.getElementById('lightbox-modal');
+    const img = document.getElementById('lightbox-image');
+    const videoContainer = document.getElementById('lightbox-video-container');
+    const iframe = document.getElementById('lightbox-iframe');
+    const localVideo = document.getElementById('lightbox-local-video');
+    const caption = document.getElementById('lightbox-caption');
+    const projectText = document.getElementById('lightbox-project');
+
+    function openLightbox(index, visibleTriggers) {
+        if (index < 0 || index >= visibleTriggers.length) return;
+        activeIndex = index;
+        const trigger = visibleTriggers[index];
+        const type = trigger.getAttribute('data-type');
+        const src = trigger.getAttribute('data-src');
+        const title = trigger.getAttribute('data-title');
+        const project = trigger.getAttribute('data-project');
+        
+        // Hide elements initially and pause local video stream
+        img.classList.add('hidden');
+        videoContainer.classList.add('hidden');
+        localVideo.classList.add('hidden');
+        localVideo.removeAttribute('src');
+        localVideo.load();
+        iframe.setAttribute('src', '');
+        
+        if (type === 'photo') {
+            img.setAttribute('src', src);
+            img.setAttribute('alt', title);
+            img.classList.remove('hidden');
+        } else if (type === 'video') {
+            if (src.includes('assets/videos/')) {
+                localVideo.setAttribute('src', src);
+                localVideo.classList.remove('hidden');
+                localVideo.load();
+                localVideo.play().catch(e => console.log("Autoplay blocked:", e));
+            } else {
+                iframe.setAttribute('src', src);
+                videoContainer.classList.remove('hidden');
+            }
+        }
+        
+        caption.textContent = title;
+        projectText.textContent = project;
+        
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // block parent scroll
+    }
+    
+    function closeLightbox() {
+        modal.classList.add('hidden');
+        iframe.setAttribute('src', '');
+        localVideo.removeAttribute('src');
+        localVideo.load();
+        document.body.style.overflow = '';
+    }
+    
+    document.addEventListener('click', (e) => {
+        const trigger = e.target.closest('[data-lightbox-trigger]');
+        if (trigger) {
+            const visibleTriggers = getVisibleTriggers();
+            const idx = visibleTriggers.indexOf(trigger);
+            if (idx !== -1) {
+                openLightbox(idx, visibleTriggers);
+            }
+        }
+    });
+    
+    document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+    
+    document.getElementById('lightbox-prev').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const visibleTriggers = getVisibleTriggers();
+        if (visibleTriggers.length === 0) return;
+        let prevIndex = activeIndex - 1;
+        if (prevIndex < 0) prevIndex = visibleTriggers.length - 1;
+        openLightbox(prevIndex, visibleTriggers);
+    });
+    
+    document.getElementById('lightbox-next').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const visibleTriggers = getVisibleTriggers();
+        if (visibleTriggers.length === 0) return;
+        let nextIndex = activeIndex + 1;
+        if (nextIndex >= visibleTriggers.length) nextIndex = 0;
+        openLightbox(nextIndex, visibleTriggers);
+    });
+    
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+        if (modal.classList.contains('hidden')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') document.getElementById('lightbox-prev').click();
+        if (e.key === 'ArrowRight') document.getElementById('lightbox-next').click();
+    });
+    
+    // Click backdrop to close
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target === document.getElementById('lightbox-media-container')) {
+            closeLightbox();
+        }
+    });
+});
+</script>
+<?php endif; ?>
 
 <!-- ═══════════════════════════════════════════════
      FULL CONTENT BLOCK
